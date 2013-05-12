@@ -1,0 +1,6 @@
+[submodule "Pish/Assets/M8"]
+	path = Pish/Assets/M8
+	url = https://github.com/ddionisio/MateUnity.git
+[submodule "Pish/Assets/M8ImageEffects"]
+	path = Pish/Assets/M8ImageEffects
+	url = https://github.com/ddionisio/MateImageEffects.git
