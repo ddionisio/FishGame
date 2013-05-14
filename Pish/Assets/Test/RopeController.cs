@@ -21,11 +21,33 @@ public class RopeController : MonoBehaviour {
         }
     }
 
+    public Vector3 startPosition {
+        get {
+            return ropeActive.transform.position;
+        }
+    }
+
     public Vector3 endPosition {
         get {
             Transform ropeT = ropeActive.transform;
             return ropeT.position + ropeT.up * mRopeLength;
         }
+    }
+
+    public void Activate(Vector2 startPos) {
+        gameObject.SetActive(true);
+
+        //generate first rope and setup
+    }
+
+    public void Deactivate() {
+        gameObject.SetActive(false);
+
+        //clean up all ropes
+    }
+
+    public void Split(Vector2 pos) {
+        //generate a new rope, freeze last one
     }
 
     void Awake() {
