@@ -2,21 +2,37 @@ using UnityEngine;
 using System.Collections;
 
 public class RopeController : MonoBehaviour {
+    public GameObject hook;
+
     public GameObject ropeActive;
 
-    public float maxRopeLength;
+    public float maxLength;
+    public float minLength;
 
-    private float mRopeLength;
+    public float fireSpeed;
+    public float expandSpeed;
 
-    public float ropeLength {
-        get { return mRopeLength; }
+    private float mCurLength;
+
+    private bool mIsAttached;
+
+    private float mAccumLength; //length from ropes that are split
+
+    public bool isAttached {
+        get { return mIsAttached; }
+    }
+
+    public float curLength {
+        get { return mCurLength; }
 
         set {
-            if(mRopeLength != value) {
-                //TODO: take into account clipped ropes to cap length
-                mRopeLength = value;
+            if(mCurLength != value) {
+                mCurLength = Mathf.Clamp(value, minLength, maxLength - mAccumLength);
+
                 Vector3 s = ropeActive.transform.localScale;
-                s.y = mRopeLength;
+                s.y = mCurLength;
+
+                //set rope display tiling correctly
             }
         }
     }
@@ -30,20 +46,37 @@ public class RopeController : MonoBehaviour {
     public Vector3 endPosition {
         get {
             Transform ropeT = ropeActive.transform;
-            return ropeT.position + ropeT.up * mRopeLength;
+            return ropeT.position + ropeT.up * mCurLength;
         }
     }
 
-    public void Activate(Vector2 startPos) {
+    public void ExtendLength(float scale, float deltaTime) {
+        curLength += scale * expandSpeed * deltaTime;
+    }
+
+    //prep up for display, call before firing
+    public void Activate() {
         gameObject.SetActive(true);
 
         //generate first rope and setup
     }
 
-    public void Deactivate() {
+    //call while rope is being fired, endPos changes over time
+    public void UpdatePosition(Vector2 startPos, Vector2 endPos) {
+    }
+
+    //once a wall is hit, this is called
+    public void Attach(Vector2 endPos) {
+               
+
+        mIsAttached = true;
+    }
+
+    public void Detach() {
         gameObject.SetActive(false);
 
         //clean up all ropes
+        mAccumLength = 0.0f;
     }
 
     public void Split(Vector2 pos) {
@@ -52,7 +85,7 @@ public class RopeController : MonoBehaviour {
 
     void Awake() {
         //temp
-        mRopeLength = ropeActive.transform.localScale.y;
+        mCurLength = ropeActive.transform.localScale.y;
     }
         
     // Use this for initialization
@@ -62,6 +95,6 @@ public class RopeController : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-
+        //animate rope moving to destination
     }
 }

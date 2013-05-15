@@ -12,12 +12,15 @@ public class PlayerController : MonoBehaviour {
     public float angleSpeed = 0.05f;
     public float drag = 0.01f;
     public float maxAngleSpeed = 360.0f;
-
+    public float bounceAngleSpeed = 15.0f;
+        
     public RopeController rope;
 
     private CharacterController mCharCtrl;
 
     private Vector2 mCurVel;
+
+    private const float slideLimitOfs = 0.1f;
 
     private float mTheta; //angle around hook to body
     private float mOmega; //current angle velocity
@@ -32,6 +35,7 @@ public class PlayerController : MonoBehaviour {
 
     private float mRadianSpeed;
     private float mRadianMaxSpeed;
+    private float mRadianBounceSpeed;
 
     private float mRadianSlideLimit;
     private float mRayCheckDistance;
@@ -44,7 +48,7 @@ public class PlayerController : MonoBehaviour {
     /// </summary>
     public float ropeDistance {
         get {
-            return rope.ropeLength + mCharCtrl.radius;
+            return rope.curLength + mCharCtrl.radius;
         }
     }
 
@@ -71,43 +75,45 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
-    public bool RopeShoot() {
-        //determine if we hit a wall based on max shoot length
-        bool ret = true;
+    public void RopeShoot() {
+        if(!mRopeEnabled) {
+            Vector2 pos = Vector2.zero;
 
-        Vector2 pos = Vector2.zero;
+            mRopeEnabled = true;
 
-        mRopeEnabled = true;
+            //determine theta
 
-        //determine theta
+            mOmega = 0.0f;
 
-        mOmega = 0.0f;
+            //determine position
+            Vector2 startPos = transform.position;
 
-        //determine position
-
-        rope.Activate(pos);
-
-        return ret;
+            rope.Activate();
+            rope.Attach(startPos);
+        }
     }
 
     public void RopeRelease() {
-        mRopeEnabled = false;
+        if(mRopeEnabled) {
+            mRopeEnabled = false;
 
-        rope.Deactivate();
+            rope.Detach();
 
-        //convert angular velocity to linear velocity
-        float r = ropeDistance;
-        float theta = Mathf.Acos(Vector2.Dot(transform.up, -Vector2.up));
+            //convert angular velocity to linear velocity
+            float r = ropeDistance;
+            
+            //TODO: config scalar?
+            //float v = 2.0f * Mathf.Sqrt(-2.0f * Physics.gravity.y * r * (1.0f - Mathf.Cos(mTheta)));
 
-        //TODO: config scalar?
-        float v = 2.0f * Mathf.Sqrt(-2.0f * Physics.gravity.y * rope.ropeLength * (1.0f - Mathf.Cos(mTheta)));
+            //mCurVel = Mathf.Sign(mTheta) * v * transform.right;
 
-        mCurVel = Mathf.Sign(mTheta) * v * transform.right;
+            mCurVel = transform.right*mOmega*r;
 
-        //Debug.Log("theta: " + (Mathf.Rad2Deg * theta));
-        //Debug.Log("vel: " + v);
+            //Debug.Log("theta: " + (Mathf.Rad2Deg * theta));
+            //Debug.Log("vel: " + v);
 
-        transform.up = Vector2.up;
+            transform.up = Vector2.up;
+        }
     }
 
     void OnDestroy() {
@@ -121,8 +127,9 @@ public class PlayerController : MonoBehaviour {
 
         mRadianSpeed = angleSpeed * Mathf.Deg2Rad;
         mRadianMaxSpeed = maxAngleSpeed * Mathf.Deg2Rad;
+        mRadianBounceSpeed = bounceAngleSpeed * Mathf.Deg2Rad;
 
-        mRadianSlideLimit = (mCharCtrl.slopeLimit + 0.1f) * Mathf.Deg2Rad;
+        mRadianSlideLimit = (mCharCtrl.slopeLimit + slideLimitOfs) * Mathf.Deg2Rad;
         mRayCheckDistance = mCharCtrl.height * 0.5f + mCharCtrl.radius;
     }
 
@@ -141,7 +148,8 @@ public class PlayerController : MonoBehaviour {
 #if UNITY_EDITOR
         mRadianSpeed = angleSpeed * Mathf.Deg2Rad;
         mRadianMaxSpeed = maxAngleSpeed * Mathf.Deg2Rad;
-        mRadianSlideLimit = (mCharCtrl.slopeLimit + 0.1f) * Mathf.Deg2Rad;
+        mRadianBounceSpeed = bounceAngleSpeed * Mathf.Deg2Rad;
+        mRadianSlideLimit = (mCharCtrl.slopeLimit + slideLimitOfs) * Mathf.Deg2Rad;
         mRayCheckDistance = mCharCtrl.height * 0.5f + mCharCtrl.radius;
 #endif
 
@@ -150,22 +158,39 @@ public class PlayerController : MonoBehaviour {
         float dt = Time.fixedDeltaTime;
 
         if(mRopeEnabled) {
-            Vector2 ropeSPos = rope.startPosition;
-            Vector2 pos = transform.position;
-            float len = ropeDistance;
+            //update character movement with rope
+            if(rope.isAttached) {
+                Vector2 ropeSPos = rope.startPosition;
+                Vector2 pos = transform.position;
 
-            mOmega = Mathf.Clamp(
-                mOmega + mass * Physics.gravity.y * Mathf.Sin(mTheta) * dt / len - drag * mOmega + input.GetAxis(0, InputAction.DirX) * mRadianSpeed, 
-                -mRadianMaxSpeed, mRadianMaxSpeed);
+                //rope shrink/expand
+                if(mInputEnabled) {
+                    float axisY = input.GetAxis(0, InputAction.DirY);
+                    rope.ExtendLength(-axisY, dt);
+                }
 
-            mTheta += mOmega * dt;
-            
-            //note: theta relative to y-axis, where 0 = up vector
-            Vector2 dPos = new Vector2((ropeSPos.x + Mathf.Sin(mTheta) * len) - pos.x, (ropeSPos.y - Mathf.Cos(mTheta) * len) - pos.y);
+                float len = ropeDistance;
 
-            mCollFlags = mCharCtrl.Move(dPos);
+                mOmega += mass * Physics.gravity.y * Mathf.Sin(mTheta) * dt / len - drag * mOmega;
 
-            transform.up = ropeSPos - pos;
+                if(mInputEnabled) {
+                    mOmega += input.GetAxis(0, InputAction.DirX) * mRadianSpeed;
+                }
+
+                mOmega = Mathf.Clamp(mOmega, -mRadianMaxSpeed, mRadianMaxSpeed);
+
+                mTheta += mOmega * dt;
+
+                //note: theta relative to y-axis, where 0 = up vector
+                Vector2 dPos = new Vector2((ropeSPos.x + Mathf.Sin(mTheta) * len) - pos.x, (ropeSPos.y - Mathf.Cos(mTheta) * len) - pos.y);
+
+                mCollFlags = mCharCtrl.Move(dPos);
+
+                transform.up = ropeSPos - pos;
+            }
+            else {
+                //rope is being fired, update until we hit a wall, or maximum length reached
+            }
         }
         else {          
             if(mSliding) {
@@ -178,7 +203,7 @@ public class PlayerController : MonoBehaviour {
                 mCurVel = M8.MathUtil.Slide(-Vector2.up, n);
                 mCurVel *= slideSpeed;*/
             }
-            else {
+            else if(mInputEnabled) {
                 float axisX = input.GetAxis(0, InputAction.DirX);
 
                 if(mCharCtrl.isGrounded) {
@@ -211,7 +236,8 @@ public class PlayerController : MonoBehaviour {
     void OnAction(InputManager.Info data) {
         if(data.state == InputManager.State.Pressed) {
             if(mRopeEnabled) {
-                RopeRelease();
+                if(rope.isAttached)
+                    RopeRelease();
             }
             else {
                 if(mSliding) {
@@ -233,22 +259,23 @@ public class PlayerController : MonoBehaviour {
     }
 
     void OnCollisionEnter(Collision coll) {
-        //Debug.Log("fuck you");
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit) {
         mLastContactPoint = hit.point;
 
-        //if(hit.gameObject.name == "thing")
-            //Debug.Log("fuck you");
         if(mRopeEnabled) {
-            float r = ropeDistance;
-            Vector2 n = hit.normal;
-            float dot = Vector2.Dot(n, Vector2.up);
-            float theta = Mathf.Acos(dot);
+            //warning: mathematicians will cry when they see this
+            float vel = Mathf.Abs(mOmega) + Mathf.Sign(mOmega) * mRadianBounceSpeed;
 
-            //TODO: config scalar?
-            mOmega = 2.0f* Mathf.Abs(mOmega) * Mathf.Sin(theta) / r;
+            Vector2 rpos = rope.startPosition;
+            Vector2 hp = hit.point;
+            Vector2 v1 = hit.normal;
+            Vector2 v2 = hp - rpos;
+
+            mOmega = M8.MathUtil.CheckSideSign(v2, v1)*vel;
+
+            rope.curLength = (transform.position - rope.startPosition).magnitude - mCharCtrl.radius;
         }
     }
 
