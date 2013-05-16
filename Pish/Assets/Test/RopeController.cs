@@ -2,9 +2,12 @@ using UnityEngine;
 using System.Collections;
 
 public class RopeController : MonoBehaviour {
+    public GameObject ropeTemplate;
+    public int ropeMax = 20;
+
     public GameObject hook;
 
-    public GameObject ropeActive;
+    public float minLengthClip; //minimum length required to clip
 
     public float maxLength;
     public float minLength;
@@ -12,11 +15,26 @@ public class RopeController : MonoBehaviour {
     public float fireSpeed;
     public float expandSpeed;
 
-    private float mCurLength;
+    private float mCurLength = 0.0f;
 
-    private bool mIsAttached;
+    private bool mIsAttached = false;
 
-    private float mAccumLength; //length from ropes that are split
+    private float mAccumLength = 0.0f; //length from ropes that are split
+
+    private int mNumRopeActive = 0;
+    private GameObject[] mRopes;
+
+    private Vector3 mRopeOriginalScale;
+
+    public GameObject ropeLastActive {
+        get {
+            if(mNumRopeActive > 0) {
+                return mRopes[mNumRopeActive - 1];
+            }
+
+            return null;
+        }
+    }
 
     public bool isAttached {
         get { return mIsAttached; }
@@ -27,10 +45,13 @@ public class RopeController : MonoBehaviour {
 
         set {
             if(mCurLength != value) {
+                Transform ropeT = ropeLastActive.transform;
+
                 mCurLength = Mathf.Clamp(value, minLength, maxLength - mAccumLength);
 
-                Vector3 s = ropeActive.transform.localScale;
+                Vector3 s = ropeT.localScale;
                 s.y = mCurLength;
+                ropeT.localScale = s;
 
                 //set rope display tiling correctly
             }
@@ -39,55 +60,171 @@ public class RopeController : MonoBehaviour {
 
     public Vector3 startPosition {
         get {
-            return ropeActive.transform.position;
+            return ropeLastActive.transform.position;
         }
     }
 
     public Vector3 endPosition {
         get {
-            Transform ropeT = ropeActive.transform;
+            Transform ropeT = ropeLastActive.transform;
             return ropeT.position + ropeT.up * mCurLength;
         }
     }
 
+    //dir = towards rope start pos (which is where the hook is)
     public void ExtendLength(float scale, float deltaTime) {
-        curLength += scale * expandSpeed * deltaTime;
+        curLength = mCurLength + scale * expandSpeed * deltaTime;
     }
 
     //prep up for display, call before firing
-    public void Activate() {
+    //origin = player's fire point
+    //theta = angle starting from up vector
+    public void Fire(Vector3 origin, Vector3 dir) {
+        mIsAttached = false;
+
         gameObject.SetActive(true);
 
-        //generate first rope and setup
+        GameObject rope = RopeNew();
+
+        Vector2 pos = new Vector2(origin.x + dir.x * minLength, origin.y + dir.y * minLength);
+
+        rope.transform.up = -dir;
+        rope.transform.position = pos;
+        curLength = minLength;
+
+        hook.SetActive(true);
+        hook.transform.position = pos;
+        hook.transform.up = dir;
     }
 
-    //call while rope is being fired, endPos changes over time
-    public void UpdatePosition(Vector2 startPos, Vector2 endPos) {
+    //call while rope is being fired
+    //returns true when we are done
+    //will attach if we collide with something
+    public bool UpdateFire(Vector3 origin, Vector3 dir, float deltaTime, int collisionMask) {
+        bool maxReached = false;
+
+        float newLen = mCurLength + fireSpeed * deltaTime;
+
+        maxReached = newLen >= maxLength;
+        if(maxReached) {
+            newLen = maxLength;
+        }
+
+        Vector3 ropeStartPos;
+
+        Transform ropeT = ropeLastActive.transform;
+                
+        RaycastHit hit;
+        mIsAttached = Physics.Raycast(origin, dir, out hit, newLen, collisionMask);
+        if(mIsAttached) {
+            curLength = (origin - hit.point).magnitude;
+            ropeStartPos = new Vector3(hit.point.x, hit.point.y, ropeT.position.z);
+        }
+        else {
+            curLength = newLen;
+            ropeStartPos = new Vector3(origin.x + dir.x * mCurLength, origin.y + dir.y * mCurLength, ropeT.position.z);
+        }
+
+        ropeT.position = ropeStartPos;
+        hook.transform.position = ropeStartPos;
+
+        return maxReached || mIsAttached;
     }
 
-    //once a wall is hit, this is called
-    public void Attach(Vector2 endPos) {
-               
+    //update while attached, will clip rope depending on collision from start to origin
+    public void UpdateAttach(Vector3 origin, int collisionMask) {
+        Transform ropeT = ropeLastActive.transform;
+        Vector3 pos = ropeT.position;
 
-        mIsAttached = true;
+        Vector2 dir = origin - pos;
+        dir.Normalize();
+
+        ropeT.up = dir;
+
+        if(mNumRopeActive == 1)
+            hook.transform.up = -dir;
+
+        //Vector3 castPoint = new Vector3(pos.x + dir.x * minLengthClip, pos.y + dir.y * minLengthClip, pos.z);
+        if(mCurLength > minLengthClip) {
+            RaycastHit hit;
+            if(Physics.Raycast(origin, -dir, out hit, mCurLength - minLengthClip, collisionMask)) {
+                //set clip length, acquire new rope, set new rope length
+
+                Vector2 dpos = hit.point - pos;
+                float dist = dpos.magnitude;
+
+                GameObject newRope = RopeNew();
+                if(newRope != null) {
+                    mAccumLength += dist;
+
+                    //set the first half
+                    ropeT.up = dpos;
+                    Vector3 ropeScale = ropeT.localScale;
+                    ropeScale.y = dist;
+                    ropeT.localScale = ropeScale;
+
+                    //second half
+                    Transform newRopeT = newRope.transform;
+
+                    Vector3 newPos = new Vector3(hit.point.x, hit.point.y, pos.z);
+                    Vector2 newDPos = origin - newPos;
+                    float newDist = newDPos.magnitude;
+
+                    newRopeT.position = newPos;
+                    newRopeT.up = newDPos;
+                    curLength = newDist;
+                }
+            }
+            else if(mNumRopeActive > 1) {
+                //check if we can unclip from last rope
+                GameObject lastRope = mRopes[mNumRopeActive - 2];
+                Transform lastRopeT = lastRope.transform;
+                Vector3 lastPos = lastRopeT.position;
+
+                Vector2 dirToLastRope = lastPos - origin;
+                float lastDist = dirToLastRope.magnitude;
+                dirToLastRope /= lastDist;
+
+                if(!Physics.Raycast(origin, dirToLastRope, out hit, lastDist - minLengthClip, collisionMask)) {
+                    //unclip
+                    ropeT.gameObject.SetActive(false);
+
+                    mNumRopeActive--;
+
+                    lastRope.SetActive(true);
+
+                    mAccumLength -= lastRopeT.localScale.y;
+
+                    lastRopeT.up = -dirToLastRope;
+                    curLength = lastDist;
+                }
+            }
+        }
     }
 
     public void Detach() {
+        mIsAttached = false;
+
+        RopeRemoveAll();
+
         gameObject.SetActive(false);
 
         //clean up all ropes
         mAccumLength = 0.0f;
     }
 
-    public void Split(Vector2 pos) {
-        //generate a new rope, freeze last one
+    void Awake() {
+        mRopeOriginalScale = ropeTemplate.transform.localScale;
+
+        mRopes = new GameObject[ropeMax];
+        for(int i = 0; i < ropeMax; i++) {
+            GameObject newObj = GameObject.Instantiate(ropeTemplate) as GameObject;
+            newObj.transform.parent = transform;
+            newObj.SetActive(false);
+            mRopes[i] = newObj;
+        }
     }
 
-    void Awake() {
-        //temp
-        mCurLength = ropeActive.transform.localScale.y;
-    }
-        
     // Use this for initialization
     void Start() {
 
@@ -96,5 +233,31 @@ public class RopeController : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         //animate rope moving to destination
+    }
+
+    private GameObject RopeNew() {
+        if(mNumRopeActive < mRopes.Length) {
+            GameObject obj = mRopes[mNumRopeActive];
+            obj.SetActive(true);
+
+            Transform t = obj.transform;
+            t.localPosition = Vector3.zero;
+            t.localScale = mRopeOriginalScale;
+            t.localRotation = Quaternion.identity;
+
+            mNumRopeActive++;
+
+            return obj;
+        }
+
+        return null;
+    }
+
+    private void RopeRemoveAll() {
+        for(int i = 0; i < mNumRopeActive; i++) {
+            mRopes[i].SetActive(false);
+        }
+
+        mNumRopeActive = 0;
     }
 }

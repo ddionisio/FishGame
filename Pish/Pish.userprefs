@@ -1,13 +1,14 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Test\PlayerController.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Test\RopeController.cs">
     <Files>
-      <File FileName="Assets\Test\PlayerController.cs" Line="88" Column="18" />
+      <File FileName="Assets\Test\PlayerController.cs" Line="424" Column="48" />
+      <File FileName="Assets\Test\RopeController.cs" Line="150" Column="20" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\Test\PlayerController.cs" line="184" />
+      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\Test\RopeController.cs" line="178" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
