@@ -310,9 +310,12 @@ public class PlayerController : MonoBehaviour {
                 if(mCurVel.y > 0.0f)
                     mCurVel.y = 0.0f;
             }
-            else {
-                SetSliding(SlideCheck());
+
+            if((mCollFlags & CollisionFlags.Sides) != 0) {
+                mCurVel.x = 0.0f;
             }
+
+            SetSliding(SlideCheck());
 
             //determine facing
             if(mCurVel.x != 0.0f)

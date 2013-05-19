@@ -4,3 +4,6 @@
 [submodule "Pish/Assets/M8ImageEffects"]
 	path = Pish/Assets/M8ImageEffects
 	url = https://github.com/ddionisio/MateImageEffects.git
+[submodule "Pish/Assets/M8PlayMaker"]
+	path = Pish/Assets/M8PlayMaker
+	url = https://github.com/ddionisio/MatePlayMaker.git
