@@ -28,6 +28,10 @@ public class PlayerStats : MonoBehaviour {
 
     public void ResetStats() {
         mCurBattery = batteryMax;
+
+        if(changeCallback != null) {
+            changeCallback(this);
+        }
     }
 
     void OnDestroy() {
@@ -55,6 +59,7 @@ public class PlayerStats : MonoBehaviour {
     }
 
     void BatteryDrain() {
-        curBattery -= batteryDrain;
+        if(batteryDrain != 0.0f)
+            curBattery -= batteryDrain;
     }
 }

@@ -15,32 +15,46 @@ public class SpecialBoost : SpecialBase {
     }
 
     protected override void OnAct(PlayerController pc) {
+        pc.animator.mode = PlayerAnimator.Mode.Normal;
+
         if(pc.state == PlayerController.State.Normal) {
             Vector2 dir;
 
-            //check if there's a target nearby
-            Fish fishNearby = pc.fishSensor.nearestFish;
-            if(fishNearby != null) {
-                dir = fishNearby.transform.position - pc.transform.position;
-                dir.Normalize();
-
-                pc.curVelocity = dir * (speed+pc.curVelocity.magnitude);
+            if(pc.curInputAxis != Vector2.zero) {
+                pc.curVelocity = pc.curInputAxis.normalized * speed;
             }
             else {
-                //otherwise, just boost on current direction
-                if(pc.charCtrl.isGrounded) {
-                    dir = pc.curVelocity.x == 0.0f ? Vector2.up : new Vector2(Mathf.Sign(pc.curVelocity.x), 0.0f);
+                //check if there's a target nearby
+                Fish fishNearby = pc.fishSensor.nearestFish;
+                if(fishNearby != null) {
+                    dir = fishNearby.transform.position - pc.transform.position;
+                    dir.Normalize();
+
+                    pc.curVelocity = dir * speed;
                 }
                 else {
-                    dir = pc.curVelocity.normalized;
-                    M8.MathUtil.DirCap(Vector2.up, ref dir, speedAngleLimit);
+                    //otherwise, just boost on current direction
+                    if(pc.charCtrl.isGrounded) {
+                        dir = pc.curVelocity.x == 0.0f ? Vector2.up : new Vector2(Mathf.Sign(pc.curVelocity.x), 0.0f);
+                    }
+                    else {
+                        dir = pc.curVelocity.normalized;
+                        M8.MathUtil.DirCap(Vector2.up, ref dir, speedAngleLimit);
+                    }
+
+                    pc.curVelocity = dir * speed;
                 }
-            
-                pc.curVelocity += dir * speed;
             }
+
+            pc.animator.state = PlayerAnimator.State.boost;
         }
         else {
-            mRopingDir = Mathf.Sign(pc.curAngleVelocity);
+            if(pc.curInputAxis.x != 0.0f) {
+                mRopingDir = Mathf.Sign(pc.curInputAxis.x);
+            }
+            else {
+                mRopingDir = Mathf.Sign(pc.curAngleVelocity);
+            }
         }
 
         mCurTime = 0.0f;
@@ -50,6 +64,11 @@ public class SpecialBoost : SpecialBase {
 
     protected override void OnStop(PlayerController pc) {
         ActivateFishSensor(pc);
+
+        pc.animator.mode = PlayerAnimator.Mode.Normal;
+        if(pc.state != PlayerController.State.Roping) {
+            pc.animator.RevertUp();
+        }
     }
 
     protected override void OnUpdate(PlayerController pc, float deltaTime) {
@@ -60,6 +79,9 @@ public class SpecialBoost : SpecialBase {
         else {
             if(pc.state == PlayerController.State.Roping) {
                 pc.curAngleVelocity = pc.curAngleVelocity + (mRopingDir * ropingRevolution) / (2.0f * Mathf.PI * pc.ropeDistance);
+            }
+            else {
+                pc.animator.transform.up = pc.curVelocity;
             }
         }
     }

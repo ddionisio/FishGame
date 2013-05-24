@@ -2,10 +2,14 @@ using UnityEngine;
 using System.Collections;
 
 public abstract class SpecialBase : MonoBehaviour {
+    public delegate void OnChargeChange(SpecialBase special);
+
     public int maxCharge = 3;
     public float chargeRegenDelay;
 
     public bool lockGravity = false; //stop falling if true
+
+    public event OnChargeChange chargeChangeCallback;
 
     private int mCurCharge = 0;
     private bool mIsActing = false;
@@ -25,12 +29,18 @@ public abstract class SpecialBase : MonoBehaviour {
         mCurCharge = maxCharge;
 
         OnInit(pc);
+
+        if(chargeChangeCallback != null)
+            chargeChangeCallback(this);
     }
 
     public bool Act(PlayerController pc) {
         //check if we can act
         if(mCurCharge > 0) {
             mCurCharge--;
+
+            if(chargeChangeCallback != null)
+                chargeChangeCallback(this);
 
             StopAllCoroutines();
 
@@ -82,7 +92,8 @@ public abstract class SpecialBase : MonoBehaviour {
 
             mCurCharge++;
 
-            //update hud
+            if(chargeChangeCallback != null)
+                chargeChangeCallback(this);
 
             OnRecharge(pc);
         }

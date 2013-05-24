@@ -24,6 +24,9 @@ public class FishStats : MonoBehaviour {
 
     public void ResetStats() {
         mCurHit = maxHit;
+
+        if(changeCallback != null)
+            changeCallback(this);
     }
 
     void OnDestroy() {
