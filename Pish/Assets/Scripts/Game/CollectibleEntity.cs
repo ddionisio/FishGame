@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 
 public class CollectibleEntity : EntityBase {
+    public bool collectOnTrigger;
+
     private Collectible mCollectible;
 
     public Collectible collectible {

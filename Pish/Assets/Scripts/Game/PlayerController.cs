@@ -4,6 +4,7 @@ using System.Collections;
 public class PlayerController : MonoBehaviour {
     public delegate void OnStateChange(PlayerController pc, State prevState);
     public delegate void OnHurt(PlayerController pc, float energy);
+    public delegate void OnTrigger(Collider c);
 
     public enum State {
         None,
@@ -49,6 +50,7 @@ public class PlayerController : MonoBehaviour {
     public GameObject hookAimLine;
     public GameObject hookAimReticle;
     public float hookAimAngleSpeed = 30.0f;
+    public float hookAimLineScale = 1.0f;
 
     public RopeController rope;
     public FishSensor fishSensor;
@@ -62,6 +64,7 @@ public class PlayerController : MonoBehaviour {
 
     public event OnStateChange stateCallback;
     public event OnHurt hurtCallback;
+    public event OnTrigger triggerEnterCallback;
 
     private State mState = State.None;
 
@@ -301,7 +304,7 @@ public class PlayerController : MonoBehaviour {
 
             animator.mode = PlayerAnimator.Mode.Spin;
             animator.state = PlayerAnimator.State.roll;
-            animator.spinSpeed = Mathf.Abs(4.0f*mOmega*Mathf.Rad2Deg);
+            animator.spinSpeed = Mathf.Abs(8.0f*mOmega*Mathf.Rad2Deg);
         }
     }
 
@@ -310,6 +313,7 @@ public class PlayerController : MonoBehaviour {
 
         stateCallback = null;
         hurtCallback = null;
+        triggerEnterCallback = null;
     }
 
     void Awake() {
@@ -666,12 +670,12 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
-    void OnCollisionEnter(Collision coll) {
+    void OnTriggerEnter(Collider coll) {
+        if(triggerEnterCallback != null)
+            triggerEnterCallback(coll);
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit) {
-        //mLastContactPoint = hit.point;
-
         switch(mState) {
             case State.Roping:
                 if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
@@ -817,18 +821,24 @@ public class PlayerController : MonoBehaviour {
             Vector3 pos = transform.position;
 
             RaycastHit rhit;
-            if(Physics.Raycast(pos, up, out rhit, r, terrainMask.value)) {
+            bool isHit = Physics.Raycast(pos, up, out rhit, r, terrainMask.value);
+
+            if(isHit) {
+                hookAimReticle.SetActive(true);
+
                 r = (pos - rhit.point).magnitude;
+
+                Vector3 hookPos = hookAimReticle.transform.localPosition;
+
+                hookPos.x = up.x * r;
+                hookPos.y = up.y * r;
+
+                hookAimReticle.transform.localPosition = hookPos;
             }
-
-            Vector3 hookPos = hookAimReticle.transform.localPosition;
-
-            hookPos.x = up.x * r;
-            hookPos.y = up.y * r;
-
-            hookAimReticle.transform.localPosition = hookPos;
-            hookAimReticle.transform.up = up;
-
+            else {
+                hookAimReticle.SetActive(false);
+            }
+                                    
             Vector3 hookLinePos = hookAimLine.transform.localPosition;
             hookLinePos.x = up.x * mCharCtrl.radius;
             hookLinePos.y = up.y * mCharCtrl.radius;
@@ -839,6 +849,10 @@ public class PlayerController : MonoBehaviour {
             hookAimLine.transform.localPosition = hookLinePos;
             hookAimLine.transform.localScale = s;
             hookAimLine.transform.up = up;
+
+            //update line tile scale
+            Material lineMat = hookAimLine.renderer.material;
+            lineMat.SetFloat("tileY", s.y / hookAimLineScale);
         }
     }
 

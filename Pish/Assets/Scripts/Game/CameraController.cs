@@ -1,13 +1,17 @@
 using UnityEngine;
 using System.Collections;
 
+[ExecuteInEditMode]
 public class CameraController : MonoBehaviour {
 
     //public Transform attachTo;
     public float attachDeadzone;
     public float moveDelay = 0.1f;
+    public Vector2 parallaxBound = new Vector2(5, 2);
+    public Vector2 parallaxMoveScale = new Vector2(0.1f, 0.1f);
 
     public Camera lookCamera; //the main camera looking at player
+    public Camera parallaxCamera;
 
     private Transform mAttachTo;
 
@@ -37,6 +41,10 @@ public class CameraController : MonoBehaviour {
 
     void Awake() {
         mAttachDeadzoneSq = attachDeadzone * attachDeadzone;
+
+        if(parallaxCamera != null) {
+            parallaxCamera.transparencySortMode = TransparencySortMode.Orthographic;
+        }
     }
     
     // Use this for initialization
@@ -74,6 +82,14 @@ public class CameraController : MonoBehaviour {
             transform.position = Vector3.SmoothDamp(transform.position, mDestPos, ref mCurVel, moveDelay);
 
             mLastAttachPos = apos;
+        }
+
+        if(parallaxCamera != null) {
+            Vector3 ppos = parallaxCamera.transform.localPosition;
+            Vector2 lookV = lookCamera.velocity;
+            ppos.x = Mathf.Clamp(ppos.x + lookV.x * parallaxMoveScale.x, -parallaxBound.x, parallaxBound.x);
+            ppos.y = Mathf.Clamp(ppos.y + lookV.y * parallaxMoveScale.y, -parallaxBound.y, parallaxBound.y);
+            parallaxCamera.transform.localPosition = ppos;
         }
     }
 }

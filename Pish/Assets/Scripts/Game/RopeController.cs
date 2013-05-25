@@ -15,6 +15,9 @@ public class RopeController : MonoBehaviour {
     public float fireSpeed;
     public float expandSpeed;
 
+    public Material ropeMaterial;
+    public float ropeTileScale;
+
     private float mCurLength = 0.0f;
 
     private bool mIsAttached = false;
@@ -25,6 +28,8 @@ public class RopeController : MonoBehaviour {
     private GameObject[] mRopes;
 
     private Vector3 mRopeOriginalScale;
+
+    private Vector2 mRopeTextureSize;
 
     public GameObject ropeLastActive {
         get {
@@ -86,14 +91,14 @@ public class RopeController : MonoBehaviour {
 
         GameObject rope = RopeNew();
 
-        Vector2 pos = new Vector2(origin.x + dir.x * minLength, origin.y + dir.y * minLength);
+        Vector3 pos = new Vector3(origin.x + dir.x * minLength, origin.y + dir.y * minLength, rope.transform.position.z);
 
         rope.transform.up = -dir;
         rope.transform.position = pos;
         curLength = minLength;
 
         hook.SetActive(true);
-        hook.transform.position = pos;
+        hook.transform.position = new Vector3(pos.x, pos.y, hook.transform.position.z);
         hook.transform.up = dir;
     }
 
@@ -126,7 +131,9 @@ public class RopeController : MonoBehaviour {
         }
 
         ropeT.position = ropeStartPos;
-        hook.transform.position = ropeStartPos;
+        hook.transform.position = new Vector3(ropeStartPos.x, ropeStartPos.y, hook.transform.position.z);
+
+        RopeUpdateFX(ropeLastActive);
 
         return maxReached || mIsAttached;
     }
@@ -163,10 +170,12 @@ public class RopeController : MonoBehaviour {
                     ropeScale.y = dist;
                     ropeT.localScale = ropeScale;
 
+                    RopeUpdateFX(ropeT.gameObject);
+
                     //second half
                     Transform newRopeT = newRope.transform;
 
-                    Vector3 newPos = new Vector3(hit.point.x, hit.point.y, pos.z);
+                    Vector3 newPos = new Vector3(hit.point.x, hit.point.y, newRopeT.position.z);
                     Vector2 newDPos = origin - newPos;
                     float newDist = newDPos.magnitude;
 
@@ -200,6 +209,8 @@ public class RopeController : MonoBehaviour {
                 }
             }
         }
+
+        RopeUpdateFX(ropeLastActive);
     }
 
     public void Detach() {
@@ -215,14 +226,18 @@ public class RopeController : MonoBehaviour {
 
     void Awake() {
         mRopeOriginalScale = ropeTemplate.transform.localScale;
-
+                
         mRopes = new GameObject[ropeMax];
         for(int i = 0; i < ropeMax; i++) {
             GameObject newObj = GameObject.Instantiate(ropeTemplate) as GameObject;
+            newObj.renderer.material = ropeMaterial;// Object.Instantiate(ropeMaterial) as Material;
             newObj.transform.parent = transform;
+            newObj.transform.localPosition = Vector3.zero;
             newObj.SetActive(false);
             mRopes[i] = newObj;
         }
+
+        mRopeTextureSize = new Vector2(ropeMaterial.mainTexture.width, ropeMaterial.mainTexture.height);
     }
 
     // Use this for initialization
@@ -233,6 +248,12 @@ public class RopeController : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         //animate rope moving to destination
+    }
+
+    private void RopeUpdateFX(GameObject rope) {
+        Material mat = rope.renderer.material;
+        float sY = rope.transform.localScale.y;
+        mat.SetFloat("tileY", sY / ropeTileScale);
     }
 
     private GameObject RopeNew() {

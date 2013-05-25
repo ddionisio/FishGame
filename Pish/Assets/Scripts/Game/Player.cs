@@ -21,6 +21,7 @@ public class Player : MonoBehaviour {
         mController.hurtCallback += OnHurt;
         mController.jumpSpecial.chargeChangeCallback += OnJumpChargeChange;
         mController.collectSensor.collector.collectReachedCallback += OnCollect;
+        mController.triggerEnterCallback += OnControllerTriggerEnter;
 
         mStats = GetComponentInChildren<PlayerStats>();
         mStats.changeCallback += OnStatsChange;
@@ -58,6 +59,15 @@ public class Player : MonoBehaviour {
         }
 
         stats.curBattery -= energy;
+    }
+
+    void OnControllerTriggerEnter(Collider c) {
+        Collectible collect = c.GetComponent<Collectible>();
+        if(collect != null) {
+            OnCollect(collect);
+
+            collect.Collected();
+        }
     }
 
     void OnCollect(Collectible collect) {
