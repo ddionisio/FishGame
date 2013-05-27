@@ -25,6 +25,7 @@ public class Collector : MonoBehaviour {
     private Queue<Collectible> mCollects;
     
     public void AddToQueue(Collectible collect) {
+        collect.collectFlagged = true;
         mCollects.Enqueue(collect);
     }
 

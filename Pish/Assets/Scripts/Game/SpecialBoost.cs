@@ -2,10 +2,12 @@ using UnityEngine;
 using System.Collections;
 
 public class SpecialBoost : SpecialBase {
-    public float speed;
     public float ropingRevolution;
     public float speedAngleLimit = 89.0f;
-    
+
+    public float speed;
+    public float targetSpeed;
+
     public float delay;
 
     private float mCurTime;
@@ -18,33 +20,41 @@ public class SpecialBoost : SpecialBase {
         pc.animator.mode = PlayerAnimator.Mode.Normal;
 
         if(pc.state == PlayerController.State.Normal) {
+            float spd = speed;
             Vector2 dir;
 
-            if(pc.curInputAxis != Vector2.zero) {
-                pc.curVelocity = pc.curInputAxis.normalized * speed;
+            //check if there's a target nearby
+            Fish fishNearby = pc.fishSensor.nearestFish;
+            if(fishNearby != null) {
+                dir = fishNearby.transform.position - pc.transform.position;
+                dir.Normalize();
+                spd = targetSpeed;
+            }
+            else if(pc.curInputAxis != Vector2.zero) {
+                dir = pc.curInputAxis.normalized;
             }
             else {
-                //check if there's a target nearby
-                Fish fishNearby = pc.fishSensor.nearestFish;
-                if(fishNearby != null) {
-                    dir = fishNearby.transform.position - pc.transform.position;
-                    dir.Normalize();
-
-                    pc.curVelocity = dir * speed;
+                //otherwise, just boost on current direction
+                if(pc.charCtrl.isGrounded) {
+                    dir = pc.curVelocity.x == 0.0f ? Vector2.up : new Vector2(Mathf.Sign(pc.curVelocity.x), 0.0f);
                 }
                 else {
-                    //otherwise, just boost on current direction
-                    if(pc.charCtrl.isGrounded) {
-                        dir = pc.curVelocity.x == 0.0f ? Vector2.up : new Vector2(Mathf.Sign(pc.curVelocity.x), 0.0f);
-                    }
-                    else {
-                        dir = pc.curVelocity.normalized;
-                        M8.MathUtil.DirCap(Vector2.up, ref dir, speedAngleLimit);
-                    }
-
-                    pc.curVelocity = dir * speed;
+                    dir = pc.curVelocity.normalized;
+                    M8.MathUtil.DirCap(Vector2.up, ref dir, speedAngleLimit);
                 }
             }
+
+            //half the current velocity if opposite side of dir
+            Vector2 velDir = pc.curVelocity;
+            float velMag = velDir.magnitude;
+            if(velMag > 0.0f) {
+                velDir /= velMag;
+                if(Vector2.Dot(dir, velDir) < 0.0f)
+                    velMag *= 0.5f;
+            }
+
+            //new velocity = speed + current speed
+            pc.curVelocity = dir * (spd + velMag);
 
             pc.animator.state = PlayerAnimator.State.boost;
         }
@@ -58,8 +68,6 @@ public class SpecialBoost : SpecialBase {
         }
 
         mCurTime = 0.0f;
-
-        pc.fishSensor.gameObject.SetActive(false);
     }
 
     protected override void OnStop(PlayerController pc) {
@@ -86,7 +94,7 @@ public class SpecialBoost : SpecialBase {
         }
     }
 
-    protected override void OnRecharge(PlayerController pc) {
+    protected override void OnChargeUpdate(PlayerController pc) {
         ActivateFishSensor(pc);
     }
 
@@ -97,13 +105,13 @@ public class SpecialBoost : SpecialBase {
     private void ActivateFishSensor(PlayerController pc) {
         switch(pc.state) {
             case PlayerController.State.Normal:
-                pc.fishSensor.gameObject.SetActive(!isActing && curCharge > 0);
+            case PlayerController.State.Roping:
+                pc.fishSensor.reticleEnable = !isActing && curCharge > 0;
                 break;
 
             case PlayerController.State.Stunned:
             case PlayerController.State.RopeShoot:
-            case PlayerController.State.Roping:
-                pc.fishSensor.gameObject.SetActive(false);
+                pc.fishSensor.reticleEnable = false;
                 break;
         }
     }

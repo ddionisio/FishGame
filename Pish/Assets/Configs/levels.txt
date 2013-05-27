@@ -1,0 +1,20 @@
+{
+	"fishnessRankings": [
+		{"criteria":0.0, "text":"Layperson"}
+	],
+	
+	"infos": [
+		{
+			"level":"fishing1",
+			"ascending":false,
+			"rankLabelFormat":"FISHNESS: {0:D6}",
+			"rankBestLabelFormat":"BEST FISHNESS: {0:D6}",
+			"rankNilRef":"rank_nil",
+			"ranks" : [
+				{ "criteria":100.0, "spriteRef":"rank_bronze" },
+				{ "criteria":250.0, "spriteRef":"rank_silver" },
+				{ "criteria":300.0, "spriteRef":"rank_gold" },
+			]
+		},
+	]
+}

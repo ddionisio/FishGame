@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 public class ModalIntro : UIController {
+    public string toScene;
 
     protected override void OnActive(bool active) {
         InputManager input = Main.instance.input;
@@ -22,7 +23,7 @@ public class ModalIntro : UIController {
 
     void OnPress(InputManager.Info data) {
         if(data.state == InputManager.State.Pressed) {
-
+            Main.instance.sceneManager.LoadScene(toScene);
         }
     }
 }

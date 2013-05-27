@@ -3,11 +3,13 @@ using System.Collections;
 
 public abstract class SpecialBase : MonoBehaviour {
     public delegate void OnChargeChange(SpecialBase special);
-
+        
     public int maxCharge = 3;
     public float chargeRegenDelay;
 
     public bool lockGravity = false; //stop falling if true
+
+    public GameObject goEnable;
 
     public event OnChargeChange chargeChangeCallback;
 
@@ -24,6 +26,10 @@ public abstract class SpecialBase : MonoBehaviour {
 
     //call on start for each special, initializes data
     public void Init(PlayerController pc) {
+        if(goEnable != null) {
+            goEnable.SetActive(false);
+        }
+
         pc.stateCallback += OnStateChange;
 
         mCurCharge = maxCharge;
@@ -32,6 +38,8 @@ public abstract class SpecialBase : MonoBehaviour {
 
         if(chargeChangeCallback != null)
             chargeChangeCallback(this);
+
+        OnChargeUpdate(pc);
     }
 
     public bool Act(PlayerController pc) {
@@ -42,6 +50,8 @@ public abstract class SpecialBase : MonoBehaviour {
             if(chargeChangeCallback != null)
                 chargeChangeCallback(this);
 
+            OnChargeUpdate(pc);
+
             StopAllCoroutines();
 
             StartCoroutine(doCharge(pc));
@@ -49,6 +59,10 @@ public abstract class SpecialBase : MonoBehaviour {
             OnAct(pc);
                         
             mIsActing = true;
+
+            if(goEnable != null) {
+                goEnable.SetActive(true);
+            }
 
             return true;
         }
@@ -60,6 +74,10 @@ public abstract class SpecialBase : MonoBehaviour {
         if(mIsActing) {
             //cancel
             OnStop(pc);
+
+            if(goEnable != null) {
+                goEnable.SetActive(false);
+            }
 
             mIsActing = false;
         }
@@ -78,7 +96,7 @@ public abstract class SpecialBase : MonoBehaviour {
 
     protected abstract void OnUpdate(PlayerController pc, float deltaTime);
 
-    protected virtual void OnRecharge(PlayerController pc) {
+    protected virtual void OnChargeUpdate(PlayerController pc) {
     }
 
     protected virtual void OnStateChange(PlayerController pc, PlayerController.State prevState) {
@@ -95,7 +113,7 @@ public abstract class SpecialBase : MonoBehaviour {
             if(chargeChangeCallback != null)
                 chargeChangeCallback(this);
 
-            OnRecharge(pc);
+            OnChargeUpdate(pc);
         }
 
         yield break;

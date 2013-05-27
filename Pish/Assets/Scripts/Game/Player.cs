@@ -1,21 +1,52 @@
 using UnityEngine;
 using System.Collections;
 
-public class Player : MonoBehaviour {
+public class Player : EntityBase {
+    public const string lastLevelPlayedKey = "lastLevelPlayed";
+    
     private PlayerController mController;
     private PlayerStats mStats;
     private CameraController mCam;
     private HUD mHUD;
+    private float mScore;
 
+    public static string lastLevel {
+        get {
+            return UserData.instance.GetString(lastLevelPlayedKey);
+        }
+    }
+        
     public PlayerController controller {
         get { return mController; }
+    }
+
+    public float score {
+        get { return mScore; }
     }
 
     public PlayerStats stats {
         get { return mStats; }
     }
 
-    void Awake() {
+    public void Stop() {
+        mController.inputEnabled = false;
+        mController.state = PlayerController.State.None;
+        mStats.Stop();
+    }
+
+    public override void SpawnFinish() {
+        mController.inputEnabled = true;
+        mController.state = PlayerController.State.Normal;
+        mStats.Run();
+    }
+
+    protected override void SpawnStart() {
+        UserData.instance.SetString(lastLevelPlayedKey, Application.loadedLevelName);
+    }
+
+    protected override void Awake() {
+        base.Awake();
+
         mController = GetComponentInChildren<PlayerController>();
         mController.stateCallback += OnStateChange;
         mController.hurtCallback += OnHurt;
@@ -28,20 +59,14 @@ public class Player : MonoBehaviour {
 
         GameObject hudGO = GameObject.FindGameObjectWithTag("HUD");
         mHUD = hudGO.GetComponent<HUD>();
-    }
 
-    // Use this for initialization
-    void Start() {
         GameObject camGO = GameObject.FindGameObjectWithTag("MainCamera");
         mCam = camGO.GetComponent<CameraController>();
         mCam.attachTo = controller.transform;
+
+        activateOnStart = true;
     }
-
-    // Update is called once per frame
-    void Update() {
-
-    }
-
+    
     void OnStatsChange(PlayerStats stats) {
         mHUD.RefreshPlayerStats(stats);
 
@@ -79,6 +104,8 @@ public class Player : MonoBehaviour {
                 FishInventory.instance.items.Add(newFish);
 
                 mHUD.RefreshFishCount(FishInventory.instance.items.Count);
+
+                mScore += collect.fvalue;
                 break;
 
             case Collectible.Type.Energy:

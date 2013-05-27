@@ -11,8 +11,6 @@ public class PlayerStats : MonoBehaviour {
 
     private float mCurBattery;
 
-    private bool mStarted = false;
-
     public float curBattery {
         get { return mCurBattery; }
         set {
@@ -34,6 +32,14 @@ public class PlayerStats : MonoBehaviour {
         }
     }
 
+    public void Run() {
+        InvokeRepeating("BatteryDrain", 1.0f, 1.0f);
+    }
+
+    public void Stop() {
+        CancelInvoke("BatteryDrain");
+    }
+
     void OnDestroy() {
         changeCallback = null;
     }
@@ -41,23 +47,7 @@ public class PlayerStats : MonoBehaviour {
     void Awake() {
         ResetStats();
     }
-
-    void OnEnable() {
-        if(mStarted) {
-            Run();
-        }
-    }
-
-    // Use this for initialization
-    void Start() {
-        mStarted = true;
-        Run();
-    }
-
-    void Run() {
-        InvokeRepeating("BatteryDrain", 1.0f, 1.0f);
-    }
-
+    
     void BatteryDrain() {
         if(batteryDrain != 0.0f)
             curBattery -= batteryDrain;

@@ -6,9 +6,23 @@ public class FishSensor : SensorCheckSphere<Fish> {
 
     private Fish mNearestFish = null;
 
+    private bool mReticleEnable = false;
+
     public Fish nearestFish {
         get {
             return mNearestFish;
+        }
+    }
+
+    public bool reticleEnable {
+        get { return mReticleEnable; }
+        set {
+            if(mReticleEnable != value) {
+                if(mNearestFish != null)
+                    mNearestFish.reticleEnabled = value;
+
+                mReticleEnable = value;
+            }
         }
     }
 
@@ -46,7 +60,7 @@ public class FishSensor : SensorCheckSphere<Fish> {
                 ClearNearestFish();
 
                 mNearestFish = nearestFish;
-                mNearestFish.reticleEnabled = true;
+                mNearestFish.reticleEnabled = mReticleEnable;
             }
         }
         else {

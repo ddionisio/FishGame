@@ -6,4 +6,5 @@ public struct InputAction {
     public const int Menu = 3;
     public const int Jump = 4;
     public const int Hook = 5;
+    public const int MenuAccept = 6;
 }

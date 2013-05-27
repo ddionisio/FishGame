@@ -17,6 +17,12 @@ public class PlayerAnimator : MonoBehaviour {
         swingR1,
         swingR2,
 
+        swingL1Boost,
+        swingL2Boost,
+        swingMidBoost,
+        swingR1Boost,
+        swingR2Boost,
+
         NumStates
     }
 
@@ -27,6 +33,7 @@ public class PlayerAnimator : MonoBehaviour {
 
     public tk2dAnimatedSprite sprite;
     public State[] swingStates;
+    public State[] swingBoostStates;
     public ParticleSystem particle;
 
     public float spinSpeed;
@@ -84,6 +91,10 @@ public class PlayerAnimator : MonoBehaviour {
                 }
             }
         }
+    }
+
+    public void RevertUpCancel() {
+        mRevertUp = false;
     }
 
     public void RevertUp() {

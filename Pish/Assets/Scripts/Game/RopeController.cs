@@ -29,8 +29,6 @@ public class RopeController : MonoBehaviour {
 
     private Vector3 mRopeOriginalScale;
 
-    private Vector2 mRopeTextureSize;
-
     public GameObject ropeLastActive {
         get {
             if(mNumRopeActive > 0) {
@@ -237,7 +235,7 @@ public class RopeController : MonoBehaviour {
             mRopes[i] = newObj;
         }
 
-        mRopeTextureSize = new Vector2(ropeMaterial.mainTexture.width, ropeMaterial.mainTexture.height);
+        //mRopeTextureSize = new Vector2(ropeMaterial.mainTexture.width, ropeMaterial.mainTexture.height);
     }
 
     // Use this for initialization

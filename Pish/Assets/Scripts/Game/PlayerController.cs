@@ -33,8 +33,6 @@ public class PlayerController : MonoBehaviour {
     public float hurtEnergy = 1.0f;
     public float hurtDelay = 2.0f; //revert to normal after given seconds
 
-    public float fishHitSpeedCriteria; //speed at which we can daze a fish
-    public float fishHitPushSpeed; //speed to apply on fish when hit speed is met
     public float fishContactSpeed; //speed at which to bounce off the fish and to push fish if not hitting
 
     public float mass = 5.0f;
@@ -51,6 +49,8 @@ public class PlayerController : MonoBehaviour {
     public GameObject hookAimReticle;
     public float hookAimAngleSpeed = 30.0f;
     public float hookAimLineScale = 1.0f;
+    public Color hookAimValidColor = new Color(0.0f, 1.0f, 0.0f, 0.5f);
+    public Color hookAimInvalidColor = new Color(1.0f, 0.0f, 0.0f, 0.5f);
 
     public RopeController rope;
     public FishSensor fishSensor;
@@ -150,7 +150,7 @@ public class PlayerController : MonoBehaviour {
                         break;
 
                     case State.RopeShoot:
-                        if(value == State.Normal)
+                        if(value != State.Roping)
                             rope.Detach();
                         break;
 
@@ -184,6 +184,7 @@ public class PlayerController : MonoBehaviour {
 
                     case State.Roping:
                         animator.mode = PlayerAnimator.Mode.Normal;
+                        animator.RevertUpCancel();
                         animator.transform.up = Vector3.up;
                         break;
 
@@ -336,7 +337,6 @@ public class PlayerController : MonoBehaviour {
             s.gameObject.SetActive(false);
         }
 
-        fishSensor.gameObject.SetActive(false);
         fishSensor.mask = fishMask;
 
         mCollectorAttachDist = collectSensor.collector.ownerAttach.localPosition.magnitude;
@@ -344,11 +344,7 @@ public class PlayerController : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
-        inputEnabled = true;
-
         SpecialsInit();
-
-        state = State.Normal;
     }
 
     void Update() {
@@ -478,15 +474,11 @@ public class PlayerController : MonoBehaviour {
 
                 mOmega += mass * Physics.gravity.y * Mathf.Sin(mTheta) * dt / len - drag * mOmega;
 
-                bool doAnimateState = true;
-
                 if(isSpecialActive) {
                     mCurSpecial.ActUpdate(this, dt);
-                    doAnimateState = !mCurSpecial.isActing;
                 }
                 else if(isJumpSpecialActive) {
                     jumpSpecial.ActUpdate(this, dt);
-                    doAnimateState = !jumpSpecial.isActing;
                 }
                 else if(mInputEnabled) {
                     //mOmega += mCurInputAxis.x * swingSpeed * Mathf.Cos(mTheta) / len;
@@ -520,14 +512,12 @@ public class PlayerController : MonoBehaviour {
 
                     collectSensor.collector.ownerAttach.transform.localPosition = -curUp * mCollectorAttachDist;
 
-                    if(doAnimateState) {
-                        Vector2 vv = curUp;
-                        M8.MathUtil.DirCap(Vector2.up, ref vv, 180);
-                        float scale = mFacingLeft ? -vv.x : vv.x;
-                        scale = scale < 0.0f ? scale + 0.5f : scale - 0.5f;
-                        int ind = Mathf.Clamp(Mathf.RoundToInt(scale * animator.swingStates.Length) + animator.swingStates.Length/2, 0, animator.swingStates.Length-1);
-                        animator.state = animator.swingStates[ind];
-                    }
+                    Vector2 vv = curUp;
+                    M8.MathUtil.DirCap(Vector2.up, ref vv, 180);
+                    float scale = mFacingLeft ? -vv.x : vv.x;
+                    scale = scale < 0.0f ? scale + 0.5f : scale - 0.5f;
+                    int ind = Mathf.Clamp(Mathf.RoundToInt(scale * animator.swingStates.Length) + animator.swingStates.Length / 2, 0, animator.swingStates.Length - 1);
+                    animator.state = isJumpSpecialActive ? animator.swingBoostStates[ind] : animator.swingStates[ind];
 
                     UpdateSpeedAnimation(true);
                 }
@@ -692,6 +682,7 @@ public class PlayerController : MonoBehaviour {
 
             case State.Stunned:
             case State.Normal:
+            case State.RopeShoot:
                 //check if we hit a wall and determine if we are hurt
                 if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
                     float speedSq = mCurVel.sqrMagnitude;
@@ -711,12 +702,12 @@ public class PlayerController : MonoBehaviour {
                         state = State.Stunned;
                         Hurt(hurtEnergy);
                     }
-                    else {
+                    else if(state != State.RopeShoot) {
                         state = State.Normal;
                     }
                 }
                 else if((fishMask & (1 << hit.gameObject.layer)) != 0) {
-                    float spd = FishContact(mCurVel, hit);
+                    float spd = FishContact(mCurVel, hit) + fishContactSpeed;
 
                     //bounce off
                     Vector2 moveDir = hit.moveDirection;
@@ -750,7 +741,7 @@ public class PlayerController : MonoBehaviour {
     private void UpdateSpeedAnimation(bool isRoping) {
         if(!mCharCtrl.isGrounded && mCollFlags == CollisionFlags.None) {
             float spd = isRoping ? Mathf.Abs(mOmega * ropeDistance) : mCurVel.magnitude;
-            animator.particleEnable = spd >= fishHitSpeedCriteria;
+            animator.particleEnable = spd >= hurtSpeed;
         }
         else {
             animator.particleEnable = false;
@@ -759,15 +750,8 @@ public class PlayerController : MonoBehaviour {
 
     //return speed
     private float FishContact(Vector2 velocity, ControllerColliderHit hit) {
-        float contactSpeed = velocity.magnitude;
-
-        float retSpeed = contactSpeed < fishHitSpeedCriteria ? fishContactSpeed : fishHitPushSpeed;
-
         Fish fish = hit.gameObject.GetComponent<Fish>();
-
-        retSpeed += fish.PlayerContact(this, mCurVel / contactSpeed, contactSpeed, hit);
-
-        return retSpeed;
+        return fish.PlayerContact(this, hit);
     }
 
     private void RopingBounce(Vector2 contactPt, Vector2 normal) {
@@ -853,6 +837,7 @@ public class PlayerController : MonoBehaviour {
             //update line tile scale
             Material lineMat = hookAimLine.renderer.material;
             lineMat.SetFloat("tileY", s.y / hookAimLineScale);
+            lineMat.SetColor("modColor", isHit ? hookAimValidColor : hookAimInvalidColor);
         }
     }
 

@@ -14,6 +14,8 @@ public class FishController : MonoBehaviour {
 
     public float waypointApproxRadius = 0.1f;
 
+    public float fallSpeedLimit = 2.5f;
+
     public PlayerSensor playerSensor;
 
     public bool playerHitInvulnerable = false;
@@ -30,6 +32,7 @@ public class FishController : MonoBehaviour {
     private string mCurWaypoint;
     private List<Transform> mCurWaypointList;
     private int mCurWaypointInd;
+    private float mPrevFlockUnitMaxSpeed;
 
     public string waypoint {
         get { return mCurWaypoint; }
@@ -82,6 +85,7 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.groupMoveEnabled = false;
                         mFlockUnit.wanderEnabled = false;
                         mFlockUnit.body.useGravity = true;
+                        mFlockUnit.maxSpeed = fallSpeedLimit;
                         break;
 
                     case MoveMode.Wander:
@@ -89,6 +93,7 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.groupMoveEnabled = true;
                         mFlockUnit.wanderEnabled = true;
                         mFlockUnit.body.useGravity = false;
+                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
                         break;
 
                     case MoveMode.Path:
@@ -96,6 +101,7 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.groupMoveEnabled = true;
                         mFlockUnit.wanderEnabled = false;
                         mFlockUnit.body.useGravity = false;
+                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
 
                         mCurWaypointList = WaypointManager.instance.GetWaypoints(mCurWaypoint);
                         mCurWaypointInd = 0;
@@ -107,19 +113,27 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.groupMoveEnabled = false;
                         mFlockUnit.wanderEnabled = false;
                         mFlockUnit.body.useGravity = false;
+                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
                         break;
 
                     case MoveMode.NumModes:
                         mFlockUnit.enabled = false;
+                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
                         break;
                 }
             }
         }
     }
 
+    public void Follow(Transform t) {
+        curMoveMode = MoveMode.Chase;
+        flockUnit.moveTarget = t;
+    }
+
     void Awake() {
         mFlockUnit = GetComponent<FlockUnit>();
         mFlockUnit.enabled = false;
+        mPrevFlockUnitMaxSpeed = mFlockUnit.maxSpeed;
 
         if(playerSensor != null) {
             playerSensor.addCallback += OnPlayerSensorAdded;

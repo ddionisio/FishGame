@@ -9,7 +9,6 @@ public class CollectibleSensor : SensorCheckSphere<Collectible> {
     }
 
     protected override void UnitAdded(Collectible unit) {
-        unit.collectFlagged = true;
         collector.AddToQueue(unit);
     }
 
