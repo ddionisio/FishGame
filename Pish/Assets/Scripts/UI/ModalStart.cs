@@ -7,10 +7,10 @@ public class ModalStart : UIController {
         InputManager input = Main.instance.input;
 
         if(active) {
-            input.AddButtonCall(0, InputAction.Hook, OnPress);
+            input.AddButtonCall(0, InputAction.MenuAccept, OnPress);
         }
         else {
-            input.RemoveButtonCall(0, InputAction.Hook, OnPress);
+            input.RemoveButtonCall(0, InputAction.MenuAccept, OnPress);
         }
     }
 
