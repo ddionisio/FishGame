@@ -4,6 +4,7 @@ using System.Collections;
 public class PlayerStats : MonoBehaviour {
     public delegate void OnChange(PlayerStats stats);
 
+    public float batteryStart;
     public float batteryMax;
     public float batteryDrain; //per seconds
 
@@ -25,7 +26,7 @@ public class PlayerStats : MonoBehaviour {
     }
 
     public void ResetStats() {
-        mCurBattery = batteryMax;
+        mCurBattery = batteryStart;
 
         if(changeCallback != null) {
             changeCallback(this);

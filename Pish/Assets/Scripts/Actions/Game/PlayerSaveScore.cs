@@ -9,10 +9,7 @@ namespace M8.PlayMaker {
         public override void OnEnter() {
             base.OnEnter();
 
-            GameData.Info info = GameData.instance.GetInfo(Application.loadedLevelName);
-            if(info != null) {
-                info.score = mComp.score;
-            }
+            GameData.instance.SaveLevelScore(Application.loadedLevelName, mComp.score);
 
             Finish();
         }

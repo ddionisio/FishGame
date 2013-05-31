@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Collector : MonoBehaviour {
+    public delegate void OnCollectQueue(Collectible collect);
     public delegate void OnCollectReached(Collectible collect);
 
     public const int collectCapacity = 20;
@@ -16,6 +17,7 @@ public class Collector : MonoBehaviour {
     public float followDirAngleLimit = 45.0f;
 
     public event OnCollectReached collectReachedCallback;
+    public event OnCollectQueue collectQueueCallback; //called when something is ready to be collected
 
     private Vector3 mCurVel = Vector3.zero;
     private Vector3 mCurDirVel = Vector3.zero;
@@ -27,10 +29,14 @@ public class Collector : MonoBehaviour {
     public void AddToQueue(Collectible collect) {
         collect.collectFlagged = true;
         mCollects.Enqueue(collect);
+
+        if(collectQueueCallback != null)
+            collectQueueCallback(collect);
     }
 
     void OnDestroy() {
         collectReachedCallback = null;
+        collectQueueCallback = null;
     }
 
     void Awake() {

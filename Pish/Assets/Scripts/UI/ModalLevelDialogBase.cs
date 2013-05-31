@@ -2,15 +2,15 @@ using UnityEngine;
 using System.Collections;
 
 public abstract class ModalLevelDialogBase : UIController {
-    private string mLevel;
+    private int mLevel;
 
-    public void Init(string level) {
+    public void Init(int level) {
         mLevel = level;
 
         OnInit(level);
     }
 
-    protected abstract void OnInit(string data);
+    protected abstract void OnInit(int level);
     protected abstract void OnPlay();
 
 
@@ -34,7 +34,7 @@ public abstract class ModalLevelDialogBase : UIController {
         if(dat.state == InputManager.State.Pressed) {
             OnPlay();
 
-            Main.instance.sceneManager.LoadScene(mLevel);
+            Main.instance.sceneManager.LoadScene(GameData.instance.GetLevelName(mLevel));
         }
     }
 }

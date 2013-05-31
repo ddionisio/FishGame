@@ -24,6 +24,18 @@ public abstract class SpecialBase : MonoBehaviour {
         get { return mCurCharge; }
     }
 
+    public void SetCharge(PlayerController pc, int val) {
+        val = Mathf.Clamp(val, 0, maxCharge);
+        if(mCurCharge != val) {
+            mCurCharge = val;
+
+            if(chargeChangeCallback != null)
+                chargeChangeCallback(this);
+
+            OnChargeUpdate(pc);
+        }
+    }
+
     //call on start for each special, initializes data
     public void Init(PlayerController pc) {
         if(goEnable != null) {
@@ -45,13 +57,8 @@ public abstract class SpecialBase : MonoBehaviour {
     public bool Act(PlayerController pc) {
         //check if we can act
         if(mCurCharge > 0) {
-            mCurCharge--;
-
-            if(chargeChangeCallback != null)
-                chargeChangeCallback(this);
-
-            OnChargeUpdate(pc);
-
+            SetCharge(pc, mCurCharge - 1);
+            
             StopAllCoroutines();
 
             StartCoroutine(doCharge(pc));
@@ -108,12 +115,7 @@ public abstract class SpecialBase : MonoBehaviour {
         while(mCurCharge < maxCharge) {
             yield return new WaitForSeconds(chargeRegenDelay);
 
-            mCurCharge++;
-
-            if(chargeChangeCallback != null)
-                chargeChangeCallback(this);
-
-            OnChargeUpdate(pc);
+            SetCharge(pc, mCurCharge + 1);
         }
 
         yield break;

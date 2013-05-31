@@ -4,24 +4,44 @@ using System.Collections.Generic;
 
 public class HUD : MonoBehaviour {
     public float energyLowScale; //if energy scale [0, 1] is below this, show warning
-
+        
     public UISlider energySlider;
     public UILabel energyPercentLabel;
 
     public Color[] energyColors; //low to high
 
     public GameObject energyLowLabel;
-        
+
+    public GOActiveBlink boostPanelBlink;
     public UISprite[] boostSprites;
     public string boostActiveRef;
     public string boostInactiveRef;
 
     public UILabel fishCountLabel;
 
-    public Transform pointerHolder;
+    public Transform[] pointerHolders;
+
+    public GameObject comboHolder;
+    public UISprite comboFill;
+    public UILabel comboLabel;
 
     private UIWidget mEnergySliderBar;
-    private List<NGUIPointAt> mPointers;
+    private List<NGUIPointAt>[] mPointers;
+
+    //fillScale = 1.0f full fill
+    public void RefreshCombo(int counter) {
+        if(counter > 1) {
+            comboHolder.SetActive(true);
+            comboLabel.text = "x" + counter.ToString();
+        }
+        else {
+            comboHolder.SetActive(false);
+        }
+    }
+
+    public void RefreshComboFill(float fillScale) {
+        comboFill.fillAmount = fillScale;
+    }
 
     public void RefreshPlayerStats(PlayerStats stats) {
         float energyScale = stats.curBattery/stats.batteryMax;
@@ -48,29 +68,41 @@ public class HUD : MonoBehaviour {
         for(; ind < boostSprites.Length; ind++) {
             boostSprites[ind].spriteName = boostInactiveRef;
         }
+
+        if(boostPanelBlink != null)
+            boostPanelBlink.enabled = special.curCharge <= 0;
+        
     }
 
-    public void RefreshFishCount(int count) {
-        fishCountLabel.text = count.ToString("D3");
+    public void RefreshFishScore(float val) {
+        fishCountLabel.text = Mathf.RoundToInt(val).ToString("D6");
     }
 
-    public NGUIPointAt AllocatePointer() {
+    public NGUIPointAt AllocatePointer(int ind) {
         NGUIPointAt ret = null;
 
-        if(mPointers != null && mPointers.Count > 0) {
-            ret = mPointers[mPointers.Count - 1];
-            ret.gameObject.SetActive(true);
-            mPointers.RemoveAt(mPointers.Count - 1);
+        if(mPointers != null) {
+            List<NGUIPointAt> pts = mPointers[ind];
+
+            if(pts != null && pts.Count > 0) {
+                ret = pts[pts.Count - 1];
+                ret.gameObject.SetActive(true);
+                pts.RemoveAt(pts.Count - 1);
+            }
         }
 
         return ret;
     }
 
-    public void ReleasePointer(NGUIPointAt pt) {
-        if(mPointers != null && pt != null) {
-            pt.SetPOI(null);
-            pt.gameObject.SetActive(false);
-            mPointers.Add(pt);
+    public void ReleasePointer(int ind, NGUIPointAt pt) {
+         if(mPointers != null) {
+            List<NGUIPointAt> pts = mPointers[ind];
+
+            if(pts != null) {
+                pt.SetPOI(null);
+                pt.gameObject.SetActive(false);
+                pts.Add(pt);
+            }
         }
     }
 
@@ -79,12 +111,23 @@ public class HUD : MonoBehaviour {
 
         mEnergySliderBar = energySlider.foreground.GetComponent<UIWidget>();
 
-        NGUIPointAt[] points = pointerHolder.GetComponentsInChildren<NGUIPointAt>(true);
-        mPointers = new List<NGUIPointAt>(points.Length);
-        foreach(NGUIPointAt pt in points) {
-            pt.gameObject.SetActive(false);
-            mPointers.Add(pt);
+        if(pointerHolders != null && pointerHolders.Length > 0) {
+            mPointers = new List<NGUIPointAt>[pointerHolders.Length];
+            for(int i = 0; i < pointerHolders.Length; i++) {
+                Transform p = pointerHolders[i];
+                NGUIPointAt[] points = p.GetComponentsInChildren<NGUIPointAt>(true);
+                mPointers[i] = new List<NGUIPointAt>(points.Length);
+                foreach(NGUIPointAt pt in points) {
+                    pt.gameObject.SetActive(false);
+                    mPointers[i].Add(pt);
+                }
+            }
         }
+
+        comboHolder.SetActive(false);
+
+        if(boostPanelBlink != null)
+            boostPanelBlink.enabled = false;
     }
 
     // Use this for initialization

@@ -26,7 +26,7 @@ public class Fish : EntityBase {
 
     public tk2dSprite[] finCopies; //other fins to duplicate frame from finAnim
 
-    public bool targetable = true;
+    public int pointerIndex = 0; //set to -1 to make fish untargetable
 
     private FishStats mStats;
     private FishController mController;
@@ -76,17 +76,19 @@ public class Fish : EntityBase {
                 //mController.Follow(pc.collectSensor.collector.transform);
             }
         }
-        else {          
-            //stun?
-            if(mController.playerContactStun) {
-                pc.state = PlayerController.State.Stunned;
-            }
+        else {
+            if(!pc.jumpSpecial.isActing) {
+                //see if we can hurt the player
+                if(mController.playerContactEnergy != 0.0f && pc.state != PlayerController.State.Stunned) {
+                    pc.Hurt(mController.playerContactEnergy);
+                }
 
-            //see if we can hurt the player
-            if(mController.playerContactEnergy != 0.0f) {
-                pc.Hurt(mController.playerContactEnergy);
+                //stun?
+                if(mController.playerContactStun) {
+                    pc.state = PlayerController.State.Stunned;
+                }
             }
-
+                        
             pushBackSpeed = mController.playerContactPushSpeed;
         }
 
@@ -114,12 +116,7 @@ public class Fish : EntityBase {
                     mRotAnims[i].speed = mRotAnimSpeeds[i];
                 }
 
-                if(mAvoiding) {
-                    bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.fear]);
-                }
-                else {
-                    bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.normal]);
-                }
+                SetBodyAnimNormal();
                 break;
 
             case StateStunned:
@@ -156,16 +153,20 @@ public class Fish : EntityBase {
 
         //play first fin, copy clip to others
         //make sure mode is random frame
-        finAnim.Play();
-        tk2dSpriteCollectionData sprDat = finAnim.Collection;
-        int sprInd = finAnim.spriteId;
+        if(finAnim != null) {
+            finAnim.Play();
+            tk2dSpriteCollectionData sprDat = finAnim.Collection;
+            int sprInd = finAnim.spriteId;
 
-        foreach(tk2dSprite spr in finCopies) {
-            spr.SwitchCollectionAndSprite(sprDat, sprInd);
+            foreach(tk2dSprite spr in finCopies) {
+                spr.SwitchCollectionAndSprite(sprDat, sprInd);
+            }
         }
 
-        //make sure mode is random frame
-        tailAnim.Play();
+        if(tailAnim != null) {
+            //make sure mode is random frame
+            tailAnim.Play();
+        }
 
         state = StateNormal;
 
@@ -173,8 +174,8 @@ public class Fish : EntityBase {
     }
 
     protected override void OnDespawned() {
-        if(mPointIndicator != null) {
-            mHUD.ReleasePointer(mPointIndicator);
+        if(pointerIndex >= 0 && mPointIndicator != null) {
+            mHUD.ReleasePointer(pointerIndex, mPointIndicator);
             mPointIndicator = null;
         }
 
@@ -214,7 +215,7 @@ public class Fish : EntityBase {
             mBodyAnimStateIds[i] = bodyAnim.GetClipIdByName(((BodyAnimState)i).ToString());
         }
 
-        mRotAnims = GetComponentsInChildren<TransAnimRotWave>();
+        mRotAnims = GetComponentsInChildren<TransAnimRotWave>(true);
         mRotAnimSpeeds = new float[mRotAnims.Length];
         for(int i = 0; i < mRotAnimSpeeds.Length; i++) {
             mRotAnimSpeeds[i] = mRotAnims[i].speed;
@@ -222,8 +223,8 @@ public class Fish : EntityBase {
     }
 
     void LateUpdate() {
-        if(targetable && mPointIndicator == null && mHUD != null) {
-            mPointIndicator = mHUD.AllocatePointer();
+        if(pointerIndex >= 0 && mPointIndicator == null && mHUD != null) {
+            mPointIndicator = mHUD.AllocatePointer(pointerIndex);
             mPointIndicator.SetPOI(transform);
         }
 
@@ -236,12 +237,7 @@ public class Fish : EntityBase {
                 if(mAvoiding != avoid) {
                     mAvoiding = avoid;
 
-                    if(mAvoiding) {
-                        bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.fear]);
-                    }
-                    else {
-                        bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.normal]);
-                    }
+                    SetBodyAnimNormal();
 
                     for(int i = 0; i < mRotAnimSpeeds.Length; i++) {
                         mRotAnims[i].speed = Mathf.Sign(mRotAnimSpeeds[i])*(Mathf.Abs(mRotAnimSpeeds[i]) + rotSpeedScale*mController.flockUnit.curSpeed);
@@ -259,6 +255,18 @@ public class Fish : EntityBase {
     void OnStatChange(FishStats stats) {
         if(stats.curHit == 0) {
             state = StateStunned;
+        }
+    }
+
+    void SetBodyAnimNormal() {
+        if(mController.curMoveMode == FishController.MoveMode.Chase) {
+            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.chase]);
+        }
+        else if(mAvoiding) {
+            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.fear]);
+        }
+        else {
+            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.normal]);
         }
     }
 }

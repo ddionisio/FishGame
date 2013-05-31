@@ -3,7 +3,7 @@ using System.Collections;
 
 public class UILevelItem : MonoBehaviour {
     public string dialog;
-    public string level;
+    public int level;
 
     private UIEventListener mEventListener;
     private ModalLevelDialogBase mDialog;

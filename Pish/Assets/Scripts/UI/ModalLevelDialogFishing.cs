@@ -5,18 +5,19 @@ public class ModalLevelDialogFishing : ModalLevelDialogBase {
     public UISprite rankSprite;
     public UILabel rankLabel;
     
-    protected override void OnInit(string level) {
-        GameData.Info info = GameData.instance.GetInfo(level);
-        float bestScore = info.bestScore;
+    protected override void OnInit(int level) {
+        GameData.LevelScore bestScore = GameData.instance.GetLevelScore(level, true);
 
-        if(info != null) {
-            if(rankSprite != null) {
-                rankSprite.spriteName = info.GetRankSpriteRef(bestScore);
-            }
-
-            rankLabel.text = string.Format(info.rankLabelFormat, Mathf.RoundToInt(bestScore));
+        if(rankLabel != null) {
+            rankLabel.text = bestScore.text;
         }
 
+        if(rankSprite != null) {
+            rankSprite.spriteName = bestScore.medalSpriteRef;
+            rankSprite.MakePixelPerfect();
+
+            M8.NGUIExtUtil.LayoutRefresh(rankSprite.transform);
+        }
     }
 
     protected override void OnPlay() {

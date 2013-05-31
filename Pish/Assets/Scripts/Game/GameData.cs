@@ -2,115 +2,197 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-//put in core
-public class GameData : MonoBehaviour {
-    public class Rank {
-        public float criteria;
-        public string spriteRef;
+public class ExploreGameData : GameData.TypeData {
+    public override int GetScore(float val) {
+        return 0;
     }
 
-    public class RankStatus {
-        public float criteria;
+    public override string GetScoreString(bool best) {
+        return "";
+    }
+}
+
+public class FishingGameData : GameData.TypeData {
+    public string scoreFormat;
+    public string bestScoreFormat;
+
+    public override int GetScore(float val) {
+        return Mathf.RoundToInt(val);
+    }
+
+    public override string GetScoreString(bool best) {
+        return string.Format(best ? bestScoreFormat : scoreFormat, GetScore(GetValue(best)));
+    }
+}
+
+//put in core
+public class GameData : MonoBehaviour {
+    public struct HIScore {
+        public int score;
+        public string rank;
+    }
+
+    public struct LevelScore {
+        public string medalSpriteRef;
         public string text;
     }
 
-    public class Info {
-        public string level;
+    public abstract class TypeData {
+        public string level = "";
+        public float[] criterias = {}; //0 = bronze, 1 = silver, 2 = gold
 
-        public bool ascending;
+        //for time related types, this should return true
+        public virtual bool ascending { get { return false; } }
 
-        public string rankNilRef;
+        public abstract int GetScore(float val);
 
-        public string rankLabelFormat;
-        public string rankBestLabelFormat;
+        public abstract string GetScoreString(bool best);
 
-        public Rank[] ranks;
+        //0 = nil, 1 = bronze, 2 = silver, 3 = gold
+        public int GetMedalIndex(bool best) {
+            int ret = 0;
+            float val = GetValue(best);
 
-        public bool scoreExists {
-            get { return UserData.instance.HasKey(level + "score"); }
-        }
-
-        public float score {
-            get { return UserData.instance.GetFloat(level + "score", ascending ? float.MaxValue : 0.0f); }
-            set {
-                SceneState.instance.SetValueFloat(level + "score", value, true);
-
-                //save to best if it's the best
-                float curBest = bestScore;
-
-                if((ascending && value < curBest) || value > curBest) {
-                    UserData.instance.SetFloat(level + "score_", value);
-                }
-            }
-        }
-
-        public float bestScore {
-            get { return UserData.instance.GetFloat(level + "score_", ascending ? float.MaxValue : 0.0f); }
-        }
-
-        public string GetRankSpriteRef(float val) {
-            string curRef = rankNilRef;
-
-            foreach(Rank rank in ranks) {
-                if(ascending) {
-                    if(val <= rank.criteria)
-                        curRef = rank.spriteRef;
-                    else
-                        break;
-                }
-                else {
-                    if(val >= rank.criteria)
-                        curRef = rank.spriteRef;
-                    else
-                        break;
-                }
-            }
-
-            return curRef;
-        }
-    }
-
-    public class FileData {
-        public RankStatus[] fishnessRankings;
-        public Info[] infos;
-    }
-    
-    public TextAsset config;
-
-    private static GameData mInstance = null;
-
-    private RankStatus[] mFishnessRankings;
-    private Dictionary<string, Info> mInfos;
-
-    public static GameData instance {
-        get { return mInstance; }
-    }
-
-    public string GetFishnessRanking(float val) {
-        string ret = "";
-
-        if(mFishnessRankings != null && mFishnessRankings.Length > 0) {
-            ret = mFishnessRankings[0].text;
-            for(int i = 1; i < mFishnessRankings.Length; i++) {
-                if(val >= mFishnessRankings[i].criteria) {
-                    ret = mFishnessRankings[i].text;
+            for(int i = 0; i < criterias.Length; i++) {
+                if((ascending && val <= criterias[i]) || val >= criterias[i]) {
+                    ret = i + 1;
                 }
                 else {
                     break;
                 }
             }
+
+            return ret;
         }
+
+        //make sure to save on user's 'last' and 'best' data
+        public void SaveValue(float val) {
+            UserData.instance.SetFloat(level + "_v", val);
+
+            //save to best if it's the best
+            float curBestVal = GetValue(true);
+
+            if((ascending && val < curBestVal) || val > curBestVal) {
+                UserData.instance.SetFloat(level + "_bv", val);
+            }
+        }
+
+        //best=false: last user's value data
+        public float GetValue(bool best) {
+            return UserData.instance.GetFloat(level + (best ? "_bv" : "_v"), ascending ? float.MaxValue : 0.0f);
+        }
+    }
+
+    public class Rank {
+        public int criteria;
+        public string text;
+    }
+
+    public class FileData {
+        public string scoreFormat;
+        public string rankFormat;
+
+        public Rank[] ranks;
+
+        public string[] medalSpriteRefs; // {nil, bronze, silver, gold}
+
+        public TypeData[] levels;
+    }
+
+    public TextAsset config;
+
+    private static GameData mInstance = null;
+
+    private string mScoreFormat;
+    private string mRankFormat;
+
+    private Rank[] mRankings;
+    private string[] mMedalSpriteRefs;
+    private TypeData[] mLevels;
+    private Dictionary<string, TypeData> mLevelNameRefs;
+
+    public static GameData instance {
+        get { return mInstance; }
+    }
+
+    public string GetLevelName(int level) {
+        if(level < mLevels.Length) {
+            return mLevels[level].level;
+        }
+
+        Debug.LogError("Invalid level index: " + level);
+        return "";
+    }
+
+    public HIScore GetHIScore() {
+        HIScore total = new HIScore() { score = 0, rank = "" };
+
+        foreach(TypeData dat in mLevels) {
+            total.score += dat.GetScore(dat.GetValue(true));
+        }
+
+        foreach(Rank rank in mRankings) {
+            if(total.score >= rank.criteria)
+                total.rank = rank.text;
+            else
+                break;
+        }
+
+        return total;
+    }
+
+    public void GetHIScoreString(out string score, out string rank) {
+        HIScore hiScore = GetHIScore();
+        score = string.Format(mScoreFormat, hiScore.score);
+        rank = string.Format(mRankFormat, hiScore.rank);
+    }
+
+    LevelScore _GetLevelScore(TypeData dat, bool best) {
+        LevelScore ret = new LevelScore() { medalSpriteRef = "", text = "" };
+        
+        int medalInd = dat.GetMedalIndex(best);
+        ret.medalSpriteRef = mMedalSpriteRefs[medalInd];
+        ret.text = dat.GetScoreString(best);
 
         return ret;
     }
 
-    public Info GetInfo(string level) {
-        Info ret = null;
-        if(!mInfos.TryGetValue(level, out ret)) {
-            Debug.LogError("Unable to find info for: " + level);
+    public LevelScore GetLevelScore(string levelName, bool best) {
+        TypeData dat = null;
+        if(!mLevelNameRefs.TryGetValue(levelName, out dat)) {
+            Debug.LogError("Level score data not found: " + levelName);
+            return new LevelScore() { medalSpriteRef = "", text = "" };
         }
 
-        return ret;
+        return _GetLevelScore(dat, best);
+    }
+
+    public LevelScore GetLevelScore(int level, bool best) {
+        if(level < mLevels.Length) {
+            return _GetLevelScore(mLevels[level], best);
+        }
+
+        Debug.LogError("Invalid level index: " + level);
+        return new LevelScore() { medalSpriteRef = "", text = "" };
+    }
+
+    public void SaveLevelScore(string levelName, float val) {
+        TypeData dat = null;
+        if(!mLevelNameRefs.TryGetValue(levelName, out dat)) {
+            return;
+        }
+
+        dat.SaveValue(val);
+    }
+
+    public void SaveLevelScore(int level, float val) {
+        if(level < mLevels.Length) {
+            TypeData dat = mLevels[level];
+            dat.SaveValue(val);
+        }
+        else {
+            Debug.LogError("Invalid level index: " + level);
+        }
     }
 
     void OnDestroy() {
@@ -122,15 +204,20 @@ public class GameData : MonoBehaviour {
         if(mInstance == null) {
             mInstance = this;
 
-            fastJSON.JSON.Instance.Parameters.UseExtensions = false;
+            fastJSON.JSON.Instance.Parameters.UseExtensions = true;
+            fastJSON.JSON.Instance.Parameters.UsingGlobalTypes = false;
             FileData fileData = fastJSON.JSON.Instance.ToObject<FileData>(config.text);
 
-            mFishnessRankings = fileData.fishnessRankings;
+            mScoreFormat = fileData.scoreFormat;
+            mRankFormat = fileData.rankFormat;
 
-            mInfos = new Dictionary<string, Info>(fileData.infos.Length);
+            mRankings = fileData.ranks;
+            mMedalSpriteRefs = fileData.medalSpriteRefs;
+            mLevels = fileData.levels;
 
-            foreach(Info info in fileData.infos) {
-                mInfos.Add(info.level, info);
+            mLevelNameRefs = new Dictionary<string, TypeData>(mLevels.Length);
+            foreach(TypeData dat in mLevels) {
+                mLevelNameRefs[dat.level] = dat;
             }
         }
     }

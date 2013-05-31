@@ -1,20 +1,23 @@
 {
-	"fishnessRankings": [
-		{"criteria":0.0, "text":"Layperson"}
+	"scoreFormat":"SCORE: {0:D7}",
+	"rankFormat":"RANK: {0}",
+	
+	"ranks" : [
+		{"criteria":0, "text":"Layperson"}
 	],
 	
-	"infos": [
-		{
-			"level":"fishing1",
-			"ascending":false,
-			"rankLabelFormat":"FISHNESS: {0:D6}",
-			"rankBestLabelFormat":"BEST FISHNESS: {0:D6}",
-			"rankNilRef":"rank_nil",
-			"ranks" : [
-				{ "criteria":100.0, "spriteRef":"rank_bronze" },
-				{ "criteria":250.0, "spriteRef":"rank_silver" },
-				{ "criteria":300.0, "spriteRef":"rank_gold" },
-			]
+	"medalSpriteRefs" : ["rank_nil", "rank_bronze", "rank_silver", "rank_gold"],
+	
+	"levels" : [
+		{ "$type":"ExploreGameData",
+			"level":"explore1"
 		},
+		
+		{ "$type":"FishingGameData",
+			"level":"fishing1",
+			"criterias":[100.0, 250.0, 300.0],
+			"scoreFormat":"FISHNESS: {0:D6}",
+			"bestScoreFormat":"BEST FISHNESS: {0:D6}"
+		}
 	]
 }

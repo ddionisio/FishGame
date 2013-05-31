@@ -81,6 +81,7 @@ public class FishController : MonoBehaviour {
                 //new
                 switch(mCurMoveMode) {
                     case MoveMode.Fall:
+                        collider.enabled = true;
                         mFlockUnit.enabled = true;
                         mFlockUnit.groupMoveEnabled = false;
                         mFlockUnit.wanderEnabled = false;
@@ -89,6 +90,7 @@ public class FishController : MonoBehaviour {
                         break;
 
                     case MoveMode.Wander:
+                        collider.enabled = true;
                         mFlockUnit.enabled = true;
                         mFlockUnit.groupMoveEnabled = true;
                         mFlockUnit.wanderEnabled = true;
@@ -97,6 +99,7 @@ public class FishController : MonoBehaviour {
                         break;
 
                     case MoveMode.Path:
+                        collider.enabled = true;
                         mFlockUnit.enabled = true;
                         mFlockUnit.groupMoveEnabled = true;
                         mFlockUnit.wanderEnabled = false;
@@ -104,11 +107,26 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
 
                         mCurWaypointList = WaypointManager.instance.GetWaypoints(mCurWaypoint);
+
+                        //get nearest point
                         mCurWaypointInd = 0;
+
+                        Vector2 pos = transform.position;
+                        float smallestSqMag = float.MaxValue;
+                        for(int i = 0; i < mCurWaypointList.Count; i++) {
+                            Vector2 wp = mCurWaypointList[i].position;
+                            float sqMag = (pos - wp).sqrMagnitude;
+                            if(sqMag < smallestSqMag) {
+                                mCurWaypointInd = i;
+                                smallestSqMag = sqMag;
+                            }
+                        }
+                        
                         GotoCurrentPath();
                         break;
 
                     case MoveMode.Chase:
+                        collider.enabled = true;
                         mFlockUnit.enabled = true;
                         mFlockUnit.groupMoveEnabled = false;
                         mFlockUnit.wanderEnabled = false;
@@ -117,6 +135,7 @@ public class FishController : MonoBehaviour {
                         break;
 
                     case MoveMode.NumModes:
+                        collider.enabled = false;
                         mFlockUnit.enabled = false;
                         mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
                         break;

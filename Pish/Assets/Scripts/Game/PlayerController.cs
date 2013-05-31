@@ -232,8 +232,10 @@ public class PlayerController : MonoBehaviour {
                     }
                 }
 
-                if(!value)
+                if(!value) {
+                    mCurInputAxis = Vector2.zero;
                     ShowHookAim(false);
+                }
             }
         }
     }
@@ -482,7 +484,7 @@ public class PlayerController : MonoBehaviour {
                 }
                 else if(mInputEnabled) {
                     //mOmega += mCurInputAxis.x * swingSpeed * Mathf.Cos(mTheta) / len;
-                    mOmega += (mCurInputAxis.x * swingRevolution) / (2.0f * Mathf.PI * len);
+                    mOmega += InputOmega(len);
                 }
 
                 mOmega = Mathf.Clamp(mOmega, -mRadianMaxSpeed, mRadianMaxSpeed);
@@ -699,8 +701,10 @@ public class PlayerController : MonoBehaviour {
                         Vector2 rV = M8.MathUtil.Reflect(mCurVel, hit.normal);
                         mCurVel = rV.normalized * hurtBounceOffSpeed;
 
+                        if(state != State.Stunned)
+                            Hurt(hurtEnergy);
+
                         state = State.Stunned;
-                        Hurt(hurtEnergy);
                     }
                     else if(state != State.RopeShoot) {
                         state = State.Normal;
@@ -754,6 +758,10 @@ public class PlayerController : MonoBehaviour {
         return fish.PlayerContact(this, hit);
     }
 
+    private float InputOmega(float len) {
+        return (mCurInputAxis.x * swingRevolution) / (2.0f * Mathf.PI * len);
+    }
+
     private void RopingBounce(Vector2 contactPt, Vector2 normal) {
         //warning: mathematicians will cry when they see this
         float vel = Mathf.Abs(mOmega);
@@ -761,7 +769,9 @@ public class PlayerController : MonoBehaviour {
         Vector2 rpos = rope.startPosition;
         Vector2 v2 = contactPt - rpos;
 
-        mOmega = M8.MathUtil.CheckSideSign(v2, normal) * (vel + mRadianBounceSpeed);
+        float inpOmega = Mathf.Abs(InputOmega(ropeDistance));
+
+        mOmega = M8.MathUtil.CheckSideSign(v2, normal) * (vel + mRadianBounceSpeed + inpOmega);
 
         Vector2 pos = transform.position;
         rope.curLength = (rpos - pos).magnitude - mCharCtrl.radius;

@@ -27,7 +27,7 @@ public class FishSensor : SensorCheckSphere<Fish> {
     }
 
     protected override bool UnitVerify(Fish unit) {
-        return unit.state == Fish.StateNormal && unit.targetable;
+        return unit.state == Fish.StateNormal && unit.pointerIndex >= 0;
     }
 
     protected override void UnitAdded(Fish unit) {

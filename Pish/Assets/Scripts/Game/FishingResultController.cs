@@ -8,8 +8,6 @@ public class FishingResultController : MonoBehaviour {
     public UILabel resultBestLabel;
     public UISprite resultBestSprite;
 
-    public UILabel resultRankLabel;
-
     public PoolController pool;
     public Transform fishHolder;
 
@@ -39,19 +37,17 @@ public class FishingResultController : MonoBehaviour {
 
         //
         string level = Player.lastLevel;
-        GameData.Info info = GameData.instance.GetInfo(level);
 
-        float score = info.score;
-        resultLabel.text = string.Format(info.rankLabelFormat, Mathf.RoundToInt(score));
-        resultSprite.spriteName = info.GetRankSpriteRef(score);
+        GameData.LevelScore bestScore = GameData.instance.GetLevelScore(level, true);
+        GameData.LevelScore score = GameData.instance.GetLevelScore(level, false);
+
+        resultLabel.text = score.text;
+        resultSprite.spriteName = score.medalSpriteRef;
         resultSprite.MakePixelPerfect();
 
-        float bestScore = info.bestScore;
-        resultBestLabel.text = string.Format(info.rankBestLabelFormat, Mathf.RoundToInt(score));
-        resultBestSprite.spriteName = info.GetRankSpriteRef(bestScore);
+        resultBestLabel.text = bestScore.text;
+        resultBestSprite.spriteName = bestScore.medalSpriteRef;
         resultBestSprite.MakePixelPerfect();
-
-        resultRankLabel.text = GameData.instance.GetFishnessRanking(score);
 
         StartCoroutine(SaladToss());
     }
@@ -81,7 +77,7 @@ public class FishingResultController : MonoBehaviour {
     IEnumerator SaladToss() {
         yield return new WaitForSeconds(fishTossStartDelay);
 
-#if true
+#if false
         //test
         for(int i = 0; i < 10; i++) {
             Transform t = pool.Spawn("fish1", null, fishHolder, null);

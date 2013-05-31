@@ -46,6 +46,11 @@ public class FishSpawner : MonoBehaviour, IComparer<FishSpawner.SpawnData> {
 
     public SpawnGroup[] group;
     public SpawnPoint[] points;
+
+    public string specialFishGroup = "fish";
+    public string specialFishRef = "starfish1";
+    public string specialFishSpawnTag = "StarfishPoints";
+    public float specialFishMinDist = 10.0f;
             
     private SpawnData mPicker = new SpawnData();
     private int mChooserInd = 0;
@@ -53,6 +58,17 @@ public class FishSpawner : MonoBehaviour, IComparer<FishSpawner.SpawnData> {
     private int mPointInd = 0;
 
     private EntitySpawnTracker mSpawnTracker;
+
+    private class SpecialFishSpawnPoint {
+        public Vector2 pos;
+        public float sqDist;
+
+        public SpecialFishSpawnPoint(Transform t) {
+            pos = t.position;
+        }
+    }
+
+    private List<SpecialFishSpawnPoint> mSpecialFishSpawnPoints = null;
 
     public int chooserIndex {
         get { return mChooserInd; }
@@ -62,7 +78,40 @@ public class FishSpawner : MonoBehaviour, IComparer<FishSpawner.SpawnData> {
         }
     }
 
+    public void SpawnSpecialFish(Transform player) {
+        if(!string.IsNullOrEmpty(specialFishRef) && mSpecialFishSpawnPoints != null) {
+            Transform spawn = PoolController.Spawn(specialFishGroup, specialFishRef, null, null, null);
+
+            //sort points based on what's nearest player
+            mSpecialFishSpawnPoints.Sort(
+                delegate(SpecialFishSpawnPoint v1, SpecialFishSpawnPoint v2) {
+                    Vector2 pos = player.position;
+
+                    v1.sqDist = (v1.pos - pos).sqrMagnitude;
+                    v2.sqDist = (v2.pos - pos).sqrMagnitude;
+
+                    return v2.sqDist.CompareTo(v2.sqDist);
+            });
+
+            //get a point outside the min distance
+            float sqMinDist = specialFishMinDist * specialFishMinDist;
+
+            Vector2 to = player.position;
+
+            foreach(SpecialFishSpawnPoint pt in mSpecialFishSpawnPoints) {
+                if(pt.sqDist >= sqMinDist) {
+                    to = pt.pos;
+                    break;
+                }
+            }
+
+            spawn.position = to;
+        }
+    }
+
     public void Spawn() {
+        Debug.Log("spawning from group index: " + mChooserInd);
+
         if(points != null && points.Length > 0) {
             SpawnPoint sp = points[mPointInd];
 
@@ -120,6 +169,18 @@ public class FishSpawner : MonoBehaviour, IComparer<FishSpawner.SpawnData> {
         }
 
         mSpawnTracker = GetComponent<EntitySpawnTracker>();
+
+        GameObject specialFishPtsGO = GameObject.FindGameObjectWithTag(specialFishSpawnTag);
+        if(specialFishPtsGO != null) {
+            Transform t = specialFishPtsGO.transform;
+            int numChild = t.GetChildCount();
+            mSpecialFishSpawnPoints = new List<SpecialFishSpawnPoint>(numChild);
+
+            for(int i = 0; i < numChild; i++) {
+                Transform pt = t.GetChild(i);
+                mSpecialFishSpawnPoints.Add(new SpecialFishSpawnPoint(pt));
+            }
+        }
     }
 
     // Use this for initialization
