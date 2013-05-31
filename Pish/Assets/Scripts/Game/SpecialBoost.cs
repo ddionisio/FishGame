@@ -7,6 +7,7 @@ public class SpecialBoost : SpecialBase {
 
     public float speed;
     public float targetSpeed;
+    public float inputAccel;
 
     public float delay;
 
@@ -45,16 +46,16 @@ public class SpecialBoost : SpecialBase {
             }
 
             //half the current velocity if opposite side of dir
-            Vector2 velDir = pc.curVelocity;
+            /*Vector2 velDir = pc.curVelocity;
             float velMag = velDir.magnitude;
             if(velMag > 0.0f) {
                 velDir /= velMag;
                 if(Vector2.Dot(dir, velDir) < 0.0f)
                     velMag *= 0.5f;
-            }
+            }*/
 
             //new velocity = speed + current speed
-            pc.curVelocity = dir * (spd + velMag);
+            pc.curVelocity = dir * spd;// (spd + velMag);
 
             pc.animator.state = PlayerAnimator.State.boost;
         }
@@ -89,6 +90,7 @@ public class SpecialBoost : SpecialBase {
                 pc.curAngleVelocity = pc.curAngleVelocity + (mRopingDir * ropingRevolution) / (2.0f * Mathf.PI * pc.ropeDistance);
             }
             else {
+                pc.curVelocity = pc.curVelocity + pc.curInputAxis * inputAccel * deltaTime;
                 pc.animator.transform.up = pc.curVelocity;
             }
         }

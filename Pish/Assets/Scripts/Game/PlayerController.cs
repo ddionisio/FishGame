@@ -104,6 +104,8 @@ public class PlayerController : MonoBehaviour {
     private bool mShowHookAim = false;
     private bool mFacingLeft = false;
     private bool mIsLastRopePoint = false; //true if we detached from rope and still mid-air
+    private bool mIsLastRopeFacingLeft;
+    private float mIsLastRopeSqMag;
 
     private float mCollectorAttachDist;
 
@@ -272,6 +274,10 @@ public class PlayerController : MonoBehaviour {
                 mFireDir = M8.MathUtil.Rotate(Vector2.up, mAimTheta);
                 mOmega = 0.0f;
             }
+            else {
+                if(mIsLastRopeSqMag != 0.0f)
+                    mOmega *= mCurVel.sqrMagnitude / mIsLastRopeSqMag;
+            }
 
             //determine position
             Vector3 startPos = pos + mFireDir * mCharCtrl.radius;
@@ -297,6 +303,9 @@ public class PlayerController : MonoBehaviour {
 
             //convert angular velocity to linear velocity
             mCurVel = GetLinearFromOmega();
+
+            mIsLastRopeFacingLeft = mCurVel.x < 0.0f;
+            mIsLastRopeSqMag = mCurVel.sqrMagnitude;
 
             //Debug.Log("theta: " + (Mathf.Rad2Deg * theta));
             //Debug.Log("vel: " + v);
@@ -349,8 +358,8 @@ public class PlayerController : MonoBehaviour {
         SpecialsInit();
     }
 
-    void Update() {
-    }
+    /*void Update() {
+    }*/
 
     // Update is called once per frame
     void FixedUpdate() {
@@ -562,8 +571,15 @@ public class PlayerController : MonoBehaviour {
         }
 
         //determine facing
-        if(mCurVel.x != 0.0f)
+        if(mCurVel.x != 0.0f) {
             isFacingLeft = mCurVel.x < 0.0f;
+
+            if(mIsLastRopeFacingLeft != mFacingLeft && mIsLastRopePoint) {
+                mTheta *= -1;
+                mFireDir.x *= -1;
+                mIsLastRopeFacingLeft = mFacingLeft;
+            }
+        }
 
         //set collector attach offset
         if(mCharCtrl.isGrounded) {
@@ -769,9 +785,9 @@ public class PlayerController : MonoBehaviour {
         Vector2 rpos = rope.startPosition;
         Vector2 v2 = contactPt - rpos;
 
-        float inpOmega = Mathf.Abs(InputOmega(ropeDistance));
+        //float inpOmega = Mathf.Abs(InputOmega(ropeDistance));
 
-        mOmega = M8.MathUtil.CheckSideSign(v2, normal) * (vel + mRadianBounceSpeed + inpOmega);
+        mOmega = M8.MathUtil.CheckSideSign(v2, normal) * (vel + mRadianBounceSpeed);// + inpOmega);
 
         Vector2 pos = transform.position;
         rope.curLength = (rpos - pos).magnitude - mCharCtrl.radius;
