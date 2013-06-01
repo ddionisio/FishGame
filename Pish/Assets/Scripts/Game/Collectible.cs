@@ -7,6 +7,7 @@ public class Collectible : MonoBehaviour {
     public enum Type {
         Fish,
         Energy,
+        Collect,
 
         NumTypes
     }

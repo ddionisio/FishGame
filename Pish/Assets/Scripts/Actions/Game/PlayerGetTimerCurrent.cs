@@ -3,7 +3,8 @@ using HutongGames.PlayMaker;
 
 namespace M8.PlayMaker {
     [ActionCategory("Game")]
-    public class PlayerGetCurrentCombo : FSMActionComponentBase<Player> {
+    [Tooltip("get the time value")]
+    public class PlayerGetTimerCurrent : FSMActionComponentBase<Player> {
         [RequiredField]
         [UIHint(UIHint.Variable)]
         public FsmFloat output;
@@ -21,7 +22,7 @@ namespace M8.PlayMaker {
         public override void OnEnter() {
             base.OnEnter();
 
-            output.Value = mComp.currentCombo;
+            output.Value = mComp.hud.timerCurrent;
 
             if(!everyFrame.Value)
                 Finish();
@@ -29,7 +30,8 @@ namespace M8.PlayMaker {
 
         // Code that runs every frame.
         public override void OnUpdate() {
-            output.Value = mComp.currentCombo;
+            output.Value = mComp.hud.timerCurrent;
         }
     }
+
 }

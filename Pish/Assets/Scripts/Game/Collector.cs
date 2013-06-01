@@ -27,11 +27,13 @@ public class Collector : MonoBehaviour {
     private Queue<Collectible> mCollects;
     
     public void AddToQueue(Collectible collect) {
-        collect.collectFlagged = true;
-        mCollects.Enqueue(collect);
+        if(mCollects != null) {
+            collect.collectFlagged = true;
+            mCollects.Enqueue(collect);
 
-        if(collectQueueCallback != null)
-            collectQueueCallback(collect);
+            if(collectQueueCallback != null)
+                collectQueueCallback(collect);
+        }
     }
 
     void OnDestroy() {

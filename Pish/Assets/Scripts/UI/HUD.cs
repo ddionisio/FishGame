@@ -3,6 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class HUD : MonoBehaviour {
+    public enum TimerMode {
+        None,
+        Increase,
+        Decrease
+    }
+
     public float energyLowScale; //if energy scale [0, 1] is below this, show warning
         
     public UISlider energySlider;
@@ -21,26 +27,49 @@ public class HUD : MonoBehaviour {
 
     public Transform[] pointerHolders;
 
-    public GameObject comboHolder;
-    public UISprite comboFill;
-    public UILabel comboLabel;
+    public GameObject counterHolder;
+    public UISprite counterFill;
+    public UILabel counterLabel;
+
+    public UILabel timerLabel;
 
     private UIWidget mEnergySliderBar;
     private List<NGUIPointAt>[] mPointers;
 
-    //fillScale = 1.0f full fill
-    public void RefreshCombo(int counter) {
-        if(counter > 1) {
-            comboHolder.SetActive(true);
-            comboLabel.text = "x" + counter.ToString();
-        }
-        else {
-            comboHolder.SetActive(false);
+    private float mTimerCurrent = 0.0f;
+    private TimerMode mTimerMode = TimerMode.None;
+
+    public float timerCurrent {
+        get { return mTimerCurrent; }
+        set { mTimerCurrent = value; }
+    }
+
+    public TimerMode timerMode {
+        get { return mTimerMode; }
+        set {
+            if(mTimerMode != value) {
+                if(mTimerMode == TimerMode.None && value != TimerMode.None) {
+                    StartCoroutine(DoTimer());
+                }
+                else if(value == TimerMode.None) {
+                    StopCoroutine("DoTimer");
+                }
+
+                mTimerMode = value;
+            }
         }
     }
 
-    public void RefreshComboFill(float fillScale) {
-        comboFill.fillAmount = fillScale;
+    public void TimerStart() {
+    }
+
+    //fillScale = 1.0f full fill
+    public void RefreshCounter(string format, int counter) {
+        counterLabel.text = string.Format(format, counter);
+    }
+
+    public void RefreshCounterFill(float fillScale) {
+        counterFill.fillAmount = fillScale;
     }
 
     public void RefreshPlayerStats(PlayerStats stats) {
@@ -124,7 +153,7 @@ public class HUD : MonoBehaviour {
             }
         }
 
-        comboHolder.SetActive(false);
+        counterHolder.SetActive(false);
 
         if(boostPanelBlink != null)
             boostPanelBlink.enabled = false;
@@ -138,5 +167,36 @@ public class HUD : MonoBehaviour {
     // Update is called once per frame
     void Update() {
 
+    }
+
+    void RefreshTimer() {
+        int centi = Mathf.RoundToInt(mTimerCurrent * 100.0f);
+        int seconds = Mathf.RoundToInt(mTimerCurrent);
+        int minutes = seconds / 60;
+
+        timerLabel.text = string.Format("{0:D2}:{1:D2}:{2:D2}", minutes % 60, seconds % 60, centi % 100);
+    }
+
+    IEnumerator DoTimer() {
+        WaitForFixedUpdate wait = new WaitForFixedUpdate();
+
+        while(true) {
+            yield return wait;
+
+            switch(mTimerMode) {
+                case TimerMode.None:
+                    yield break;
+
+                case TimerMode.Decrease:
+                    mTimerCurrent -= Time.fixedDeltaTime;
+                    break;
+
+                case TimerMode.Increase:
+                    mTimerCurrent += Time.fixedDeltaTime;
+                    break;
+            }
+
+            RefreshTimer();
+        }
     }
 }

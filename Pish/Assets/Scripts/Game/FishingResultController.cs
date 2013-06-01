@@ -1,13 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class FishingResultController : MonoBehaviour {
-    public UILabel resultLabel;
-    public UISprite resultSprite;
-
-    public UILabel resultBestLabel;
-    public UISprite resultBestSprite;
-
+public class FishingResultController : BaseResultController {
     public PoolController pool;
     public Transform fishHolder;
 
@@ -20,34 +14,19 @@ public class FishingResultController : MonoBehaviour {
     public float fishTossStartDelay;
     public float fishTossDelay;
 
-    void OnDestroy() {
+    protected override void OnDestroy() {
         if(FishInventory.instance != null)
             FishInventory.instance.items.Clear();
 
-        if(Main.instance != null && Main.instance.input != null)
-            Main.instance.input.RemoveButtonCall(0, InputAction.MenuAccept, OnInputContinue);
+        base.OnDestroy();
     }
 
     void Awake() {
     }
 
     // Use this for initialization
-    void Start() {
-        Main.instance.input.AddButtonCall(0, InputAction.MenuAccept, OnInputContinue);
-
-        //
-        string level = Player.lastLevel;
-
-        GameData.LevelScore bestScore = GameData.instance.GetLevelScore(level, true);
-        GameData.LevelScore score = GameData.instance.GetLevelScore(level, false);
-
-        resultLabel.text = score.text;
-        resultSprite.spriteName = score.medalSpriteRef;
-        resultSprite.MakePixelPerfect();
-
-        resultBestLabel.text = bestScore.text;
-        resultBestSprite.spriteName = bestScore.medalSpriteRef;
-        resultBestSprite.MakePixelPerfect();
+    protected override void Start() {
+        base.Start();
 
         StartCoroutine(SaladToss());
     }

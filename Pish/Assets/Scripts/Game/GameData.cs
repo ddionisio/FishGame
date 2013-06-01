@@ -25,6 +25,37 @@ public class FishingGameData : GameData.TypeData {
     }
 }
 
+public class FishingCollectData : GameData.TypeData {
+    public string format;
+    public string bestFormat;
+
+    public float criteriaScore = 1000.0f;
+    public float criteriaBonusMod = 2.0f;
+
+    public override int GetScore(float val) {
+        float score = 0.0f;
+        float criteriaMax = 0.0f;
+        foreach(float criteria in criterias) {
+            if(val >= criteria) {
+                score += criteriaScore;
+                criteriaMax += criteriaMax;
+            }
+        }
+
+        score += (val - criteriaMax) * criteriaBonusMod;
+
+        return Mathf.RoundToInt(score);
+    }
+
+    public override string GetScoreString(bool best) {
+        float val = GetValue(best);
+        int centi = Mathf.RoundToInt(val * 100.0f);
+        int seconds = Mathf.RoundToInt(val);
+        int minutes = seconds / 60;
+        return string.Format(best ? bestFormat : format, minutes % 60, seconds % 60, centi % 100);
+    }
+}
+
 //put in core
 public class GameData : MonoBehaviour {
     public struct HIScore {

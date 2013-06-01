@@ -1,9 +1,11 @@
 {
-	"scoreFormat":"SCORE: {0:D7}",
+	"scoreFormat":"SCORE: {0:D9}",
 	"rankFormat":"RANK: {0}",
 	
 	"ranks" : [
-		{"criteria":0, "text":"Layperson"}
+		{"criteria":0, "text":"Layperson"},
+		{"criteria":1000, "text":"Master Bait"},
+		{"criteria":2000, "text":"Fishanatic"},
 	],
 	
 	"medalSpriteRefs" : ["rank_nil", "rank_bronze", "rank_silver", "rank_gold"],
@@ -16,8 +18,15 @@
 		{ "$type":"FishingGameData",
 			"level":"fishing1",
 			"criterias":[100.0, 250.0, 300.0],
-			"scoreFormat":"FISHNESS: {0:D6}",
-			"bestScoreFormat":"BEST FISHNESS: {0:D6}"
+			"scoreFormat":"FISHNESS: {0:D7}",
+			"bestScoreFormat":"BEST FISHNESS: {0:D7}"
+		},
+		
+		{ "$type":"FishingCollectData",
+			"level":"collect1",
+			"criterias":[150.0, 240.0, 300.0],
+			"format":"TIME: {0:D2}:{1:D2}:{2:D2}",
+			"bestFormat":"BEST TIME: {0:D2}:{1:D2}:{2:D2}"
 		}
 	]
 }

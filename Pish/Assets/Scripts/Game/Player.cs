@@ -4,21 +4,30 @@ using System.Collections;
 public class Player : EntityBase {
     public const string lastLevelPlayedKey = "lastLevelPlayed";
 
+    public enum CounterMode {
+        None,
+        Combo,
+        Countdown,
+    }
+
     public float comboDecayDelay;
 
     public float hurtTileMinRes;
     public float hurtTileDelay;
-    
+
     private PlayerController mController;
     private PlayerStats mStats;
     private CameraController mCam;
     private HUD mHUD;
     private float mScore;
 
-    private float mCurCombo = 1.0f;
-    private bool mComboDecayEnabled = false;
-    private float mCurComboDecay = 0.0f;
-    private WaitForFixedUpdate mComboWait;
+    private CounterMode mCounterMode = CounterMode.None;
+
+    private float mCurCounter = 1.0f;
+    private bool mCounterProcessEnabled = false;
+    private float mCurCounterTime = 0.0f;
+
+    public float mCountdownMax = 60.0f;
 
     private M8.ImageEffects.Tile mTiler;
 
@@ -28,16 +37,83 @@ public class Player : EntityBase {
         }
     }
 
-    public float currentCombo {
-        get { return mCurCombo; }
+    public float countdownMax {
+        get { return mCountdownMax; }
+        set {
+            mCountdownMax = value;
+            if(mCounterMode == CounterMode.Countdown)
+                mHUD.RefreshCounterFill(mCurCounter / mCountdownMax);
+        }
     }
-        
+
+    public CounterMode counterMode {
+        get { return mCounterMode; }
+        set {
+            if(mCounterMode != value) {
+                mCounterMode = value;
+
+                switch(mCounterMode) {
+                    case CounterMode.None:
+                        mHUD.counterHolder.SetActive(false);
+                        break;
+
+                    case CounterMode.Combo:
+                        mCurCounter = 1.0f;
+                        mCurCounterTime = 0.0f;
+                        mHUD.counterHolder.SetActive(false);
+                        break;
+
+                    case CounterMode.Countdown:
+                        mCurCounter = mCountdownMax;
+                        if(!mCounterProcessEnabled)
+                            StartCoroutine(DoCountdown());
+                        break;
+                }
+            }
+        }
+    }
+
+    public HUD hud {
+        get { return mHUD; }
+    }
+
+    public float currentCounter {
+        get { return mCurCounter; }
+        set {
+            if(mCurCounter != value) {
+                mCurCounter = value;
+
+                switch(mCounterMode) {
+                    case CounterMode.Combo:
+                        mCurCounterTime = comboDecayDelay;
+
+                        mHUD.counterHolder.SetActive(mCurCounter > 1.0f);
+                        if(mCurCounter > 1.0f && !mCounterProcessEnabled)
+                            StartCoroutine(DoCombo());
+                        else
+                            mHUD.RefreshCounter("x{0}", (int)mCurCounter);
+                        break;
+
+                    case CounterMode.Countdown:
+                        if(!mCounterProcessEnabled)
+                            StartCoroutine(DoCountdown());
+                        else {
+                            mHUD.RefreshCounter("{0}", (int)mCurCounter);
+                            mHUD.RefreshCounterFill(mCurCounter / mCountdownMax);
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
     public PlayerController controller {
         get { return mController; }
     }
 
     public float score {
         get { return mScore; }
+        set { mScore = value; }
     }
 
     public PlayerStats stats {
@@ -87,8 +163,6 @@ public class Player : EntityBase {
         mTiler.enabled = false;
 
         activateOnStart = true;
-
-        mComboWait = new WaitForFixedUpdate();
     }
 
     void OnStatsChange(PlayerStats stats) {
@@ -102,9 +176,11 @@ public class Player : EntityBase {
     void OnStateChange(PlayerController pc, PlayerController.State prevState) {
         if(pc.state == PlayerController.State.Stunned) {
             //cancel combo
-            mCurCombo = 1.0f;
-            mCurComboDecay = 0.0f;
-            mHUD.RefreshCombo(1);
+            if(mCounterMode == CounterMode.Combo) {
+                mCurCounter = 1.0f;
+                mCurCounterTime = 0.0f;
+                mHUD.counterHolder.SetActive(false);
+            }
         }
     }
 
@@ -135,19 +211,20 @@ public class Player : EntityBase {
                 FishInventory.Item newFish = new FishInventory.Item() { type = collect.svalue, ival = collect.ivalue, fval = collect.fvalue };
                 FishInventory.instance.items.Add(newFish);
 
-                mScore += collect.fvalue * mCurCombo;
+                mScore += collect.fvalue * mCurCounter;
 
                 mHUD.RefreshFishScore(mScore);
 
-                //update combo
-                mCurCombo += 1.0f;
-                mCurComboDecay = comboDecayDelay;
+                if(mCounterMode == CounterMode.Combo) {
+                    //update combo
+                    mCurCounter += 1.0f;
+                    mCurCounterTime = comboDecayDelay;
 
-                if(mCurCombo > 1.0f && !mComboDecayEnabled)
-                    StartCoroutine(DoCombo());
-                else
-                    mHUD.RefreshCombo((int)mCurCombo);
-
+                    if(mCurCounter > 1.0f && !mCounterProcessEnabled)
+                        StartCoroutine(DoCombo());
+                    else
+                        mHUD.RefreshCounter("x{0}", (int)mCurCounter);
+                }
                 break;
 
             case Collectible.Type.Energy:
@@ -157,39 +234,73 @@ public class Player : EntityBase {
                     mController.jumpSpecial.SetCharge(mController, mController.jumpSpecial.curCharge + 1);
 
                 break;
+
+            case Collectible.Type.Collect:
+                mCurCounter += collect.fvalue;
+
+                mScore++;
+                mHUD.RefreshFishScore(mScore);
+                break;
         }
     }
 
     void OnCollect(Collectible collect) {
-       // Debug.Log("collected: " + collect.type);
+        // Debug.Log("collected: " + collect.type);
     }
 
     void OnJumpChargeChange(SpecialBase special) {
         mHUD.RefreshBoost(special);
     }
-    
-    IEnumerator DoCombo() {
-        mComboDecayEnabled = true;
 
-        mCurComboDecay = comboDecayDelay;
+    IEnumerator DoCountdown() {
+        mCounterProcessEnabled = true;
 
-        mHUD.RefreshCombo((int)mCurCombo);
+        mHUD.counterHolder.SetActive(true);
 
-        while(mCurCombo > 1.0f) {
-            while(mCurComboDecay > 0.0f) {
-                mHUD.RefreshComboFill(mCurComboDecay / comboDecayDelay);
+        WaitForFixedUpdate wait = new WaitForFixedUpdate();
 
-                mCurComboDecay -= Time.fixedDeltaTime;
+        while(mCurCounter > 0.0f) {
+            yield return wait;
 
-                yield return mComboWait;
-            }
+            mCurCounter -= Time.fixedDeltaTime;
 
-            if(mCurCombo > 1.0f)
-                mCurCombo -= 1.0f;
-
-            mHUD.RefreshCombo((int)mCurCombo);
+            mHUD.RefreshCounterFill(mCurCounter / countdownMax);
+            mHUD.RefreshCounter("{0}", (int)mCurCounter);
         }
 
-        mComboDecayEnabled = false;
+        mHUD.counterHolder.SetActive(false);
+
+        mCounterProcessEnabled = false;
+    }
+
+    IEnumerator DoCombo() {
+        mCounterProcessEnabled = true;
+
+        mHUD.counterHolder.SetActive(true);
+
+        WaitForFixedUpdate wait = new WaitForFixedUpdate();
+
+        mCurCounterTime = comboDecayDelay;
+
+        mHUD.RefreshCounter("x{0}", (int)mCurCounter);
+
+        while(mCurCounter > 1.0f) {
+            while(mCurCounterTime > 0.0f) {
+                mHUD.RefreshCounterFill(mCurCounterTime / comboDecayDelay);
+
+                mCurCounterTime -= Time.fixedDeltaTime;
+
+                yield return wait;
+            }
+
+            if(mCurCounter > 1.0f)
+                mCurCounter -= 1.0f;
+
+            mHUD.RefreshCounter("x{0}", (int)mCurCounter);
+        }
+
+        mHUD.counterHolder.SetActive(false);
+
+        mCounterProcessEnabled = false;
     }
 }

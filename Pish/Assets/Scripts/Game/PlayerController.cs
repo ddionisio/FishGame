@@ -513,7 +513,23 @@ public class PlayerController : MonoBehaviour {
 
                     Vector3 curUp = transform.up;
 
-                    rope.UpdateAttach(transform.position + curUp * mCharCtrl.radius, terrainMask.value);
+                    if(rope.UpdateAttach(transform.position + curUp * mCharCtrl.radius, terrainMask.value)) {
+                        //refresh theta
+                        Vector2 dir = transform.position - rope.startPosition;
+                        float mag = dir.magnitude;
+                        dir /= mag;
+                        float a = Mathf.Acos(Vector2.Dot(-Vector2.up, dir));
+                        switch(M8.MathUtil.CheckSide(dir, -Vector2.up)) {
+                            case M8.MathUtil.Side.Left:
+                                mTheta = -Mathf.Abs(a);
+                                break;
+
+                            case M8.MathUtil.Side.Right:
+                                mTheta = Mathf.Abs(a);
+                                break;
+                        }
+                        
+                    }
 
                     //rope shrink/expand
                     if(mInputEnabled) {

@@ -137,7 +137,10 @@ public class RopeController : MonoBehaviour {
     }
 
     //update while attached, will clip rope depending on collision from start to origin
-    public void UpdateAttach(Vector3 origin, int collisionMask) {
+    //return true if clip has updated
+    public bool UpdateAttach(Vector3 origin, int collisionMask) {
+        bool ret = false;
+
         Transform ropeT = ropeLastActive.transform;
         Vector3 pos = ropeT.position;
 
@@ -180,6 +183,8 @@ public class RopeController : MonoBehaviour {
                     newRopeT.position = newPos;
                     newRopeT.up = newDPos;
                     curLength = newDist;
+
+                    ret = true;
                 }
             }
             else if(mNumRopeActive > 1) {
@@ -204,11 +209,15 @@ public class RopeController : MonoBehaviour {
 
                     lastRopeT.up = -dirToLastRope;
                     curLength = lastDist;
+
+                    ret = true;
                 }
             }
         }
 
         RopeUpdateFX(ropeLastActive);
+
+        return ret;
     }
 
     public void Detach() {

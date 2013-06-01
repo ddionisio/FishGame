@@ -84,7 +84,7 @@ public class CameraController : MonoBehaviour {
             mLastAttachPos = apos;
         }
 
-        if(parallaxCamera != null) {
+        if(parallaxCamera != null && parallaxCamera.gameObject.activeSelf) {
             Vector3 ppos = parallaxCamera.transform.localPosition;
             Vector2 lookV = lookCamera.velocity;
             ppos.x = Mathf.Clamp(ppos.x + lookV.x * parallaxMoveScale.x, -parallaxBound.x, parallaxBound.x);

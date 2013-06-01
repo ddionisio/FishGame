@@ -14,6 +14,9 @@ public class Fish : EntityBase {
         NumBodyAnimStates
     }
 
+    public bool spawnSetMovement; //use this for fishes placed in level
+    public string spawnMoveWaypoint; //
+
     public GameObject reticle;
 
     public Transform bodyHolder;
@@ -170,6 +173,10 @@ public class Fish : EntityBase {
 
         state = StateNormal;
 
+
+        if(spawnSetMovement) {
+            mController.waypoint = spawnMoveWaypoint;
+        }
         //SpawnFinish();
     }
 
@@ -203,6 +210,7 @@ public class Fish : EntityBase {
         mStats.changeCallback += OnStatChange;
 
         mController = GetComponent<FishController>();
+        mController.moveModeChangedCallback += OnMoveModeChanged;
 
         mCollectible = GetComponent<Collectible>();
         mCollectible.collectedCallback += Release;
@@ -267,6 +275,12 @@ public class Fish : EntityBase {
         }
         else {
             bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.normal]);
+        }
+    }
+
+    void OnMoveModeChanged(FishController ctrl) {
+        if(state == StateNormal) {
+            SetBodyAnimNormal();
         }
     }
 }

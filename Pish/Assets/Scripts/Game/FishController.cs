@@ -12,6 +12,9 @@ public class FishController : MonoBehaviour {
         NumModes
     }
 
+    public delegate void OnMoveModeChanged(FishController ctrl);
+
+    public bool waypointPingPing = false;
     public float waypointApproxRadius = 0.1f;
 
     public float fallSpeedLimit = 2.5f;
@@ -20,9 +23,12 @@ public class FishController : MonoBehaviour {
 
     public bool playerHitInvulnerable = false;
     public bool playerChase = false; //chase player, sensor needs to be valid
+    public float playerChaseMaxSpeed = 30.0f;
     public bool playerContactStun = false; //stun player
     public float playerContactEnergy = 0.0f; //reduce player's energy
     public float playerContactPushSpeed = 0.0f;
+
+    public event OnMoveModeChanged moveModeChangedCallback;
 
     private MoveMode mCurMoveMode = MoveMode.NumModes;
     private MoveMode mPrevMoveMode = MoveMode.NumModes;
@@ -30,6 +36,7 @@ public class FishController : MonoBehaviour {
     private PlayerSensor mPlayerSensor;
 
     private string mCurWaypoint;
+    private bool mCurWaypointReverse = false;
     private List<Transform> mCurWaypointList;
     private int mCurWaypointInd;
     private float mPrevFlockUnitMaxSpeed;
@@ -78,6 +85,8 @@ public class FishController : MonoBehaviour {
 
                 mCurMoveMode = value;
 
+                Debug.Log(name + "mode change: " + mCurMoveMode);
+
                 //new
                 switch(mCurMoveMode) {
                     case MoveMode.Fall:
@@ -121,6 +130,8 @@ public class FishController : MonoBehaviour {
                                 smallestSqMag = sqMag;
                             }
                         }
+
+                        mCurWaypointReverse = false;
                         
                         GotoCurrentPath();
                         break;
@@ -131,7 +142,7 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.groupMoveEnabled = false;
                         mFlockUnit.wanderEnabled = false;
                         mFlockUnit.body.useGravity = false;
-                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
+                        mFlockUnit.maxSpeed = playerChaseMaxSpeed;
                         break;
 
                     case MoveMode.NumModes:
@@ -140,13 +151,21 @@ public class FishController : MonoBehaviour {
                         mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
                         break;
                 }
+
+                if(moveModeChangedCallback != null)
+                    moveModeChangedCallback(this);
             }
         }
     }
 
     public void Follow(Transform t) {
+        Debug.Log("follow: " + t.name);
         curMoveMode = MoveMode.Chase;
         flockUnit.moveTarget = t;
+    }
+
+    void OnDestroy() {
+        moveModeChangedCallback = null;
     }
 
     void Awake() {
@@ -165,9 +184,30 @@ public class FishController : MonoBehaviour {
         switch(mCurMoveMode) {
             case MoveMode.Path:
                 if(mFlockUnit.moveTargetDistance <= waypointApproxRadius) {
-                    mCurWaypointInd++;
-                    if(mCurWaypointInd == mCurWaypointList.Count)
-                        mCurWaypointInd = 0;
+                    if(mCurWaypointReverse) {
+                        mCurWaypointInd--;
+                        if(mCurWaypointInd == -1) {
+                            if(waypointPingPing) {
+                                mCurWaypointInd = 0;
+                                mCurWaypointReverse = false;
+                            }
+                            else {
+                                mCurWaypointInd = mCurWaypointList.Count-1;
+                            }
+                        }
+                    }
+                    else {
+                        mCurWaypointInd++;
+                        if(mCurWaypointInd == mCurWaypointList.Count) {
+                            if(waypointPingPing) {
+                                mCurWaypointInd = mCurWaypointList.Count - 1;
+                                mCurWaypointReverse = true;
+                            }
+                            else {
+                                mCurWaypointInd = 0;
+                            }
+                        }
+                    }
 
                     GotoCurrentPath();
                 }
@@ -177,6 +217,8 @@ public class FishController : MonoBehaviour {
 
     void OnPlayerSensorAdded(PlayerController unit) {
         if(playerChase) {
+            Debug.Log("chase: " + unit.name);
+
             if(mCurMoveMode == MoveMode.Chase) {
                 mFlockUnit.moveTarget = unit.transform;
             }
