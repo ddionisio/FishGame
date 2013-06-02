@@ -120,20 +120,48 @@ public class Player : EntityBase {
         get { return mStats; }
     }
 
+    public bool inputEnabled {
+        get {
+            return mController.inputEnabled;
+        }
+
+        set {
+            bool setInput = mController.inputEnabled != value;
+            mController.inputEnabled = value;
+
+            if(setInput) {
+                InputManager input = Main.instance != null ? Main.instance.input : null;
+                if(input != null) {
+                    if(value) {
+                        input.AddButtonCall(0, InputAction.Menu, OnInputPause);
+                    }
+                    else {
+                        input.RemoveButtonCall(0, InputAction.Menu, OnInputPause);
+                    }
+                }
+            }
+        }
+    }
+
     public void Stop() {
-        mController.inputEnabled = false;
+        inputEnabled = false;
         mController.state = PlayerController.State.None;
         mStats.Stop();
     }
 
     public override void SpawnFinish() {
-        mController.inputEnabled = true;
+        inputEnabled = true;
         mController.state = PlayerController.State.Normal;
         mStats.Run();
     }
 
     protected override void SpawnStart() {
         UserData.instance.SetString(lastLevelPlayedKey, Application.loadedLevelName);
+    }
+
+    protected override void OnDestroy() {
+        inputEnabled = false;
+        base.OnDestroy();
     }
 
     protected override void Awake() {
@@ -163,6 +191,22 @@ public class Player : EntityBase {
         mTiler.enabled = false;
 
         activateOnStart = true;
+    }
+
+    void OnInputPause(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            UIModalManager.instance.ModalOpen("ingameOptions");
+        }
+    }
+
+    void OnUIModalActive() {
+        inputEnabled = false;
+        Main.instance.sceneManager.Pause();
+    }
+
+    void OnUIModalInactive() {
+        Main.instance.sceneManager.Resume();
+        inputEnabled = true;
     }
 
     void OnStatsChange(PlayerStats stats) {

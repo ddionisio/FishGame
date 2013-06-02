@@ -1,19 +1,29 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Game\CollectibleEntity.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\M8\Scripts\UI\UIModalInputNGUI.cs">
     <Files>
       <File FileName="Assets\Scripts\Game\CollectibleEntity.cs" Line="46" Column="1" />
       <File FileName="Assets\Scripts\Game\Fish.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\UI\HUD.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Game\FishController.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Game\PlayerController.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\ModalLevelDialogCollect.cs" Line="9" Column="1" />
+      <File FileName="Assets\Scripts\UI\ModalLevelDialogCollect.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Game\GameData.cs" Line="1" Column="1" />
       <File FileName="Assets\M8\Editor\Game\WaypointManagerInspector.cs" Line="1" Column="1" />
+      <File FileName="Assets\NGUI\Scripts\Interaction\UIButtonKeys.cs" Line="48" Column="1" />
+      <File FileName="Assets\NGUI\Scripts\UI\UICamera.cs" Line="1021" Column="48" />
+      <File FileName="Assets\M8\Scripts\UI\UIModalInputNGUI.cs" Line="92" Column="46" />
+      <File FileName="Assets\Scripts\UI\ModalOptions.cs" Line="46" Column="1" />
+      <File FileName="Assets\M8\Scripts\Core\Main.cs" Line="23" Column="1" />
+      <File FileName="Assets\M8\Scripts\Core\UserData.cs" Line="43" Column="1" />
+      <File FileName="Assets\M8\Scripts\Core\SceneManager.cs" Line="85" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\M8\Scripts\UI\UIModalInputNGUI.cs" line="84" />
+      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\M8\Scripts\UI\UIModalInputNGUI.cs" line="92" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>
