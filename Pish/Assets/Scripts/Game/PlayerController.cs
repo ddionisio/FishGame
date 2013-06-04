@@ -191,6 +191,12 @@ public class PlayerController : MonoBehaviour {
                         break;
 
                     case State.Stunned:
+                        if(isSpecialActive)
+                            mCurSpecial.ActStop(this);
+
+                        if(isJumpSpecialActive)
+                            jumpSpecial.ActStop(this);
+
                         StartCoroutine(StunCounter());
                         break;
                 }
@@ -702,7 +708,19 @@ public class PlayerController : MonoBehaviour {
     void OnControllerColliderHit(ControllerColliderHit hit) {
         switch(mState) {
             case State.Roping:
-                if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
+                if(hit.gameObject.layer == Layers.spike) {
+                    LevelController levelCtrl = LevelController.instance;
+
+                    state = State.Stunned;
+
+                    transform.position = hit.point + hit.normal * mCharCtrl.radius;
+
+                    //bounce off
+                    mCurVel = levelCtrl.SpikeBounceOff(hit, mCurVel);
+
+                    Hurt(levelCtrl.spikeHurtAmount);
+                }
+                else if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
                     RopingBounce(hit.point, hit.normal);
                 }
                 else if((fishMask & (1 << hit.gameObject.layer)) != 0) {
@@ -717,17 +735,22 @@ public class PlayerController : MonoBehaviour {
             case State.Stunned:
             case State.Normal:
             case State.RopeShoot:
+                if(hit.gameObject.layer == Layers.spike) {
+                    LevelController levelCtrl = LevelController.instance;
+
+                    if(state != State.Stunned)
+                        Hurt(levelCtrl.spikeHurtAmount);
+
+                    state = State.Stunned;
+
+                    //bounce off
+                    mCurVel = levelCtrl.SpikeBounceOff(hit, mCurVel);
+                }
                 //check if we hit a wall and determine if we are hurt
-                if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
+                else if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
                     float speedSq = mCurVel.sqrMagnitude;
                     if(speedSq >= hurtSpeed * hurtSpeed && !mCharCtrl.isGrounded) {
                         Debug.Log("ouch");
-
-                        if(isSpecialActive)
-                            mCurSpecial.ActStop(this);
-
-                        if(isJumpSpecialActive)
-                            jumpSpecial.ActStop(this);
 
                         //bounce off
                         Vector2 rV = M8.MathUtil.Reflect(mCurVel, hit.normal);
@@ -850,7 +873,13 @@ public class PlayerController : MonoBehaviour {
             bool isHit = Physics.Raycast(pos, up, out rhit, r, terrainMask.value);
 
             if(isHit) {
-                hookAimReticle.SetActive(true);
+                if(rope.IsInvalid(rhit.collider.gameObject.layer)) {
+                    isHit = false;
+                    hookAimReticle.SetActive(false);
+                }
+                else {
+                    hookAimReticle.SetActive(true);
+                }
 
                 r = (pos - rhit.point).magnitude;
 

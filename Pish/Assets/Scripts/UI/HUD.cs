@@ -33,11 +33,15 @@ public class HUD : MonoBehaviour {
 
     public UILabel timerLabel;
 
+    public Transform rescueItemHolder;
+
     private UIWidget mEnergySliderBar;
     private List<NGUIPointAt>[] mPointers;
 
     private float mTimerCurrent = 0.0f;
     private TimerMode mTimerMode = TimerMode.None;
+
+    private HUDRescueItem[] mRescueItems;
 
     public float timerCurrent {
         get { return mTimerCurrent; }
@@ -56,6 +60,47 @@ public class HUD : MonoBehaviour {
                 }
 
                 mTimerMode = value;
+            }
+        }
+    }
+
+    public void RescueInit(GameObject itemTemplate, int count) {
+        if(count > 0) {
+            mRescueItems = new HUDRescueItem[count];
+
+            for(int i = 0; i < count; i++) {
+                GameObject go = Instantiate(itemTemplate) as GameObject;
+                Transform t = go.transform;
+                t.parent = rescueItemHolder;
+                t.localScale = Vector3.one;
+                t.localPosition = Vector3.zero;
+                t.localRotation = Quaternion.identity;
+                mRescueItems[i] = go.GetComponent<HUDRescueItem>();
+                mRescueItems[i].icon.gameObject.SetActive(false);
+            }
+
+            M8.NGUIExtUtil.LayoutRefresh(rescueItemHolder);
+        }
+        else if(mRescueItems != null) {
+            foreach(HUDRescueItem itm in mRescueItems) {
+                Destroy(itm.gameObject);
+            }
+
+            mRescueItems = null;
+        }
+    }
+
+    public void RescueRefresh(int count) {
+        if(mRescueItems != null) {
+            count = Mathf.Clamp(count, 0, mRescueItems.Length);
+
+            int ind = 0;
+            for(; ind < count; ind++) {
+                mRescueItems[ind].icon.gameObject.SetActive(true);
+            }
+
+            for(; ind < mRescueItems.Length; ind++) {
+                mRescueItems[ind].icon.gameObject.SetActive(false);
             }
         }
     }
@@ -170,11 +215,13 @@ public class HUD : MonoBehaviour {
     }
 
     void RefreshTimer() {
-        int centi = Mathf.RoundToInt(mTimerCurrent * 100.0f);
-        int seconds = Mathf.RoundToInt(mTimerCurrent);
-        int minutes = seconds / 60;
+        if(timerLabel.gameObject.activeInHierarchy) {
+            int centi = Mathf.RoundToInt(mTimerCurrent * 100.0f);
+            int seconds = Mathf.RoundToInt(mTimerCurrent);
+            int minutes = seconds / 60;
 
-        timerLabel.text = string.Format("{0:D2}:{1:D2}:{2:D2}", minutes % 60, seconds % 60, centi % 100);
+            timerLabel.text = string.Format("{0:D2}:{1:D2}:{2:D2}", minutes % 60, seconds % 60, centi % 100);
+        }
     }
 
     IEnumerator DoTimer() {

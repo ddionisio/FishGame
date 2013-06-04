@@ -8,6 +8,7 @@ public class Collectible : MonoBehaviour {
         Fish,
         Energy,
         Collect,
+        Rescue,
 
         NumTypes
     }

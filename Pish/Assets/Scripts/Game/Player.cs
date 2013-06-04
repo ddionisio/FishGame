@@ -27,14 +27,28 @@ public class Player : EntityBase {
     private bool mCounterProcessEnabled = false;
     private float mCurCounterTime = 0.0f;
 
-    public float mCountdownMax = 60.0f;
+    private float mCountdownMax = 60.0f;
+
+    private int mRescueCount = 0;
+    private int mNumDeath = 0;
 
     private M8.ImageEffects.Tile mTiler;
+
+    private Vector2 mLastSpawnPos;
+    private Checkpoint mLastCheckpoint;
 
     public static string lastLevel {
         get {
             return UserData.instance.GetString(lastLevelPlayedKey);
         }
+    }
+
+    public int rescueCount {
+        get { return mRescueCount; }
+    }
+
+    public int numDeath {
+        get { return mNumDeath; }
     }
 
     public float countdownMax {
@@ -44,6 +58,10 @@ public class Player : EntityBase {
             if(mCounterMode == CounterMode.Countdown)
                 mHUD.RefreshCounterFill(mCurCounter / mCountdownMax);
         }
+    }
+
+    public Vector3 lastSpawnPosition {
+        get { return mLastSpawnPos; }
     }
 
     public CounterMode counterMode {
@@ -143,6 +161,16 @@ public class Player : EntityBase {
         }
     }
 
+    /// <summary>
+    /// Relocate back to previous spawn and reset battery
+    /// </summary>
+    public void Respawn() {
+        mController.state = PlayerController.State.Normal;
+        mController.curVelocity = Vector2.zero;
+        mController.transform.position = mLastSpawnPos;
+        mStats.ResetStats();
+    }
+
     public void Stop() {
         inputEnabled = false;
         mController.state = PlayerController.State.None;
@@ -157,6 +185,14 @@ public class Player : EntityBase {
 
     protected override void SpawnStart() {
         UserData.instance.SetString(lastLevelPlayedKey, Application.loadedLevelName);
+
+        mScore = 0.0f;
+        mCurCounter = 1.0f;
+        mCounterProcessEnabled = false;
+        mNumDeath = 0;
+        mRescueCount = 0;
+
+        mLastSpawnPos = mController.transform.position;
     }
 
     protected override void OnDestroy() {
@@ -196,12 +232,12 @@ public class Player : EntityBase {
     void OnInputPause(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
             UIModalManager.instance.ModalOpen("ingameOptions");
+            Main.instance.sceneManager.Pause();
         }
     }
 
     void OnUIModalActive() {
         inputEnabled = false;
-        Main.instance.sceneManager.Pause();
     }
 
     void OnUIModalInactive() {
@@ -234,16 +270,46 @@ public class Player : EntityBase {
             StartCoroutine(mTiler.DoTilePulse(hurtTileMinRes, hurtTileDelay));
         }
 
+        float prevBattery = stats.curBattery;
+
         stats.curBattery -= energy;
+
+        if(stats.curBattery != prevBattery && stats.curBattery == 0.0f)
+            mNumDeath++;
     }
 
     void OnControllerTriggerEnter(Collider c) {
-        Collectible collect = c.GetComponent<Collectible>();
-        if(collect != null) {
-            OnCollectQueue(collect);
-            OnCollect(collect);
+        //checkpoint?
+        Checkpoint checkpoint = c.GetComponent<Checkpoint>();
+        if(checkpoint != null) {
+            if(mLastCheckpoint != null)
+                mLastCheckpoint.SetOpen(false);
 
-            collect.Collected();
+            mLastCheckpoint = checkpoint;
+            mLastCheckpoint.SetOpen(true);
+
+            mLastSpawnPos = mLastCheckpoint.spawnPoint.position;
+        }
+        else {
+            //collect?
+            Collectible collect = c.GetComponent<Collectible>();
+            if(collect != null) {
+                switch(collect.type) {
+                    case Collectible.Type.Energy:
+                    case Collectible.Type.Collect:
+                        //collect immediately
+                        OnCollectQueue(collect);
+                        OnCollect(collect);
+
+                        collect.Collected();
+                        break;
+
+                    case Collectible.Type.Rescue:
+                        //queue to collect
+                        mController.collectSensor.collector.AddToQueue(collect);
+                        break;
+                }
+            }
         }
     }
 
@@ -284,6 +350,11 @@ public class Player : EntityBase {
 
                 mScore++;
                 mHUD.RefreshFishScore(mScore);
+                break;
+
+            case Collectible.Type.Rescue:
+                mRescueCount++;
+                mHUD.RescueRefresh(mRescueCount);
                 break;
         }
     }

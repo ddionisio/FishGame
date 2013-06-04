@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class ExploreGameData : GameData.TypeData {
-    public override int GetScore(float val) {
+    public override int GetScore(bool best) {
         return 0;
     }
 
     public override string GetScoreString(bool best) {
         return "";
+    }
+
+    public override void SavePlayerScore(Player player) {
     }
 }
 
@@ -16,12 +19,16 @@ public class FishingGameData : GameData.TypeData {
     public string scoreFormat;
     public string bestScoreFormat;
 
-    public override int GetScore(float val) {
-        return Mathf.RoundToInt(val);
+    public override int GetScore(bool best) {
+        return Mathf.RoundToInt(GetValue(best));
     }
 
     public override string GetScoreString(bool best) {
-        return string.Format(best ? bestScoreFormat : scoreFormat, GetScore(GetValue(best)));
+        return string.Format(best ? bestScoreFormat : scoreFormat, GetScore(best));
+    }
+
+    public override void SavePlayerScore(Player player) {
+        SaveValue(player.score);
     }
 }
 
@@ -32,7 +39,9 @@ public class FishingCollectData : GameData.TypeData {
     public float criteriaScore = 1000.0f;
     public float criteriaBonusMod = 2.0f;
 
-    public override int GetScore(float val) {
+    public override int GetScore(bool best) {
+        float val = GetValue(best);
+
         float score = 0.0f;
         float criteriaMax = 0.0f;
         foreach(float criteria in criterias) {
@@ -54,6 +63,65 @@ public class FishingCollectData : GameData.TypeData {
         int minutes = seconds / 60;
         return string.Format(best ? bestFormat : format, minutes % 60, seconds % 60, centi % 100);
     }
+
+    public override void SavePlayerScore(Player player) {
+        SaveValue(player.hud.timerCurrent);
+    }
+}
+
+public class RescueGameData : GameData.TypeData {
+    public string format;
+    public string bestFormat;
+
+    public float[] timeCriterias = { }; //bonus score for each time criteria
+
+    public float rescueScore = 0.0f; //score for each rescue
+    public float timeCriteriaScore = 0.0f; //score for each criteria met
+    public float timeBonusMod = 0.0f; //score multiplier per second beyond criteria
+    public float noDeathBonus = 0.0f; //score multiplier for not getting hit
+
+    public override int GetScore(bool best) {
+        return Mathf.RoundToInt(GetValue(best));
+    }
+
+    public override string GetScoreString(bool best) {
+        return "";
+    }
+
+    public override void SavePlayerScore(Player player) {
+        count = player.rescueCount;
+
+        float score = 0.0f;
+        float rescue = player.rescueCount;
+
+        //no death bonus
+        if(player.numDeath == 0)
+            score += noDeathBonus;
+
+        //rescue score
+        score += rescue * rescueScore;
+
+        //time score
+        float time = player.hud.timerCurrent;
+
+        if(timeCriterias != null && timeCriterias.Length > 0) {
+            float lastCriteria = 0.0f;
+            foreach(float timeCriteria in timeCriterias) {
+                if(time <= timeCriteria) {
+                    lastCriteria = timeCriteria;
+                    score += timeCriteriaScore;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if(time < lastCriteria)
+                score += (lastCriteria - time)*timeBonusMod;
+        }
+
+        SaveValue(score);
+    }
 }
 
 //put in core
@@ -70,17 +138,43 @@ public class GameData : MonoBehaviour {
 
     public abstract class TypeData {
         public string level = "";
+        public int maxCount = 0; //set to > 0 to enable count
         public float[] criterias = {}; //0 = bronze, 1 = silver, 2 = gold
 
         //for time related types, this should return true
         public virtual bool ascending { get { return false; } }
 
-        public abstract int GetScore(float val);
+        public virtual int count {
+            get {
+                return maxCount > 0 ? SceneState.instance.GetGlobalValue(level + "_c") : 0;
+            }
+
+            set {
+                if(maxCount > 0) {
+                    SceneState.instance.SetGlobalValue(level + "_c", value, false);
+
+                    //save to best if better
+                    if(value > bestCount) {
+                        UserData.instance.SetInt(level + "_bc", value);
+                    }
+                }
+            }
+        }
+
+        public virtual int bestCount {
+            get {
+                return maxCount > 0 ? UserData.instance.GetInt(level + "_bc", 0) : 0;
+            }
+        }
+
+        public abstract int GetScore(bool best);
 
         public abstract string GetScoreString(bool best);
 
+        public abstract void SavePlayerScore(Player player);
+
         //0 = nil, 1 = bronze, 2 = silver, 3 = gold
-        public int GetMedalIndex(bool best) {
+        public virtual int GetMedalIndex(bool best) {
             int ret = 0;
             float val = GetValue(best);
 
@@ -95,9 +189,9 @@ public class GameData : MonoBehaviour {
 
             return ret;
         }
-
+        
         //make sure to save on user's 'last' and 'best' data
-        public void SaveValue(float val) {
+        protected void SaveValue(float val) {
             UserData.instance.SetFloat(level + "_v", val);
 
             //save to best if it's the best
@@ -109,7 +203,7 @@ public class GameData : MonoBehaviour {
         }
 
         //best=false: last user's value data
-        public float GetValue(bool best) {
+        protected float GetValue(bool best) {
             return UserData.instance.GetFloat(level + (best ? "_bv" : "_v"), ascending ? float.MaxValue : 0.0f);
         }
     }
@@ -159,7 +253,7 @@ public class GameData : MonoBehaviour {
         HIScore total = new HIScore() { score = 0, rank = "" };
 
         foreach(TypeData dat in mLevels) {
-            total.score += dat.GetScore(dat.GetValue(true));
+            total.score += dat.GetScore(true);
         }
 
         foreach(Rank rank in mRankings) {
@@ -207,19 +301,19 @@ public class GameData : MonoBehaviour {
         return new LevelScore() { medalSpriteRef = "", text = "" };
     }
 
-    public void SaveLevelScore(string levelName, float val) {
+    public void SaveLevelScore(string levelName, Player player) {
         TypeData dat = null;
         if(!mLevelNameRefs.TryGetValue(levelName, out dat)) {
             return;
         }
 
-        dat.SaveValue(val);
+        dat.SavePlayerScore(player);
     }
 
-    public void SaveLevelScore(int level, float val) {
+    public void SaveLevelScore(int level, Player player) {
         if(level < mLevels.Length) {
             TypeData dat = mLevels[level];
-            dat.SaveValue(val);
+            dat.SavePlayerScore(player);
         }
         else {
             Debug.LogError("Invalid level index: " + level);

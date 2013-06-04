@@ -18,6 +18,8 @@ public class RopeController : MonoBehaviour {
     public Material ropeMaterial;
     public float ropeTileScale;
 
+    public LayerMask invalidMask;
+
     private float mCurLength = 0.0f;
 
     private bool mIsAttached = false;
@@ -100,6 +102,13 @@ public class RopeController : MonoBehaviour {
         hook.transform.up = dir;
     }
 
+    /// <summary>
+    /// Check if given layer is invalid for roping
+    /// </summary>
+    public bool IsInvalid(int layer) {
+        return (invalidMask & (1 << layer)) != 0;
+    }
+
     //call while rope is being fired
     //returns true when we are done
     //will attach if we collide with something
@@ -122,6 +131,12 @@ public class RopeController : MonoBehaviour {
         if(mIsAttached) {
             curLength = (origin - hit.point).magnitude;
             ropeStartPos = new Vector3(hit.point.x, hit.point.y, ropeT.position.z);
+
+            //check if invalid
+            if(IsInvalid(hit.collider.gameObject.layer)) {
+                maxReached = true;
+                mIsAttached = false;
+            }
         }
         else {
             curLength = newLen;

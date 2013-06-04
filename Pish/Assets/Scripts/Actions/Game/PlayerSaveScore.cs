@@ -9,7 +9,7 @@ namespace M8.PlayMaker {
         public override void OnEnter() {
             base.OnEnter();
 
-            GameData.instance.SaveLevelScore(Application.loadedLevelName, mComp.score);
+            GameData.instance.SaveLevelScore(Application.loadedLevelName, mComp);
 
             Finish();
         }
