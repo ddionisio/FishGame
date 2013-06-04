@@ -33,8 +33,6 @@ public class PlayerController : MonoBehaviour {
     public float hurtEnergy = 1.0f;
     public float hurtDelay = 2.0f; //revert to normal after given seconds
 
-    public float fishContactSpeed; //speed at which to bounce off the fish and to push fish if not hitting
-
     public float mass = 5.0f;
     public float swingRevolution = 0.05f;
     public float drag = 0.01f;
@@ -511,8 +509,7 @@ public class PlayerController : MonoBehaviour {
 
                 mCollFlags = mCharCtrl.Move(dPos);
 
-                //make sure we are still in roping state
-                //this is bad code...
+                //make sure we are still in roping state... (may have collided with something that stuns us)
                 if(mState == State.Roping) {
                     Vector2 dUp = ropeSPos - pos;
                     transform.up = dUp;
@@ -521,20 +518,15 @@ public class PlayerController : MonoBehaviour {
 
                     if(rope.UpdateAttach(transform.position + curUp * mCharCtrl.radius, terrainMask.value)) {
                         //refresh theta
-                        Vector2 dir = transform.position - rope.startPosition;
-                        float mag = dir.magnitude;
-                        dir /= mag;
-                        float a = Mathf.Acos(Vector2.Dot(-Vector2.up, dir));
-                        switch(M8.MathUtil.CheckSide(dir, -Vector2.up)) {
-                            case M8.MathUtil.Side.Left:
-                                mTheta = -Mathf.Abs(a);
-                                break;
+                        RefreshTheta();
 
-                            case M8.MathUtil.Side.Right:
-                                mTheta = Mathf.Abs(a);
-                                break;
-                        }
-                        
+                        //reposition
+                        //make sure we are still in roping state... (may have collided with something that stuns us)
+                        pos = transform.position;
+                        dPos = new Vector3((ropeSPos.x + Mathf.Sin(mTheta) * len) - pos.x, (ropeSPos.y - Mathf.Cos(mTheta) * len) - pos.y, 0.0f);
+                        mCollFlags = mCharCtrl.Move(dPos);
+                        if(mState != State.Roping)
+                            break;
                     }
 
                     //rope shrink/expand
@@ -554,6 +546,23 @@ public class PlayerController : MonoBehaviour {
 
                     UpdateSpeedAnimation(true);
                 }
+                break;
+        }
+    }
+
+    //only call if roping
+    void RefreshTheta() {
+        Vector2 dir = transform.position - rope.startPosition;
+        float mag = dir.magnitude;
+        dir /= mag;
+        float a = Mathf.Acos(Vector2.Dot(-Vector2.up, dir));
+        switch(M8.MathUtil.CheckSide(dir, -Vector2.up)) {
+            case M8.MathUtil.Side.Left:
+                mTheta = -Mathf.Abs(a);
+                break;
+
+            case M8.MathUtil.Side.Right:
+                mTheta = Mathf.Abs(a);
                 break;
         }
     }
@@ -766,7 +775,7 @@ public class PlayerController : MonoBehaviour {
                     }
                 }
                 else if((fishMask & (1 << hit.gameObject.layer)) != 0) {
-                    float spd = FishContact(mCurVel, hit) + fishContactSpeed;
+                    float spd = FishContact(mCurVel, hit);
 
                     //bounce off
                     Vector2 moveDir = hit.moveDirection;

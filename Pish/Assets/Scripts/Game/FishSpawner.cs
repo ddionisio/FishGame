@@ -129,9 +129,7 @@ public class FishSpawner : MonoBehaviour, IComparer<FishSpawner.SpawnData> {
                 Transform spawn = PoolController.Spawn(dat.group, dat.type, null, point, null);
 
                 Fish fish = spawn.GetComponent<Fish>();
-                fish.controller.flockUnit.wanderOrigin = point.position;
-                fish.controller.flockUnit.wanderRadius = sp.wanderRadius;
-                fish.controller.flockUnit.wanderOriginLock = true;
+                fish.controller.SetWanderData(point.position, sp.wanderRadius);
                 fish.controller.waypoint = sp.waypoint;
 
                 mSpawnTracker.Register(fish);
@@ -155,8 +153,7 @@ public class FishSpawner : MonoBehaviour, IComparer<FishSpawner.SpawnData> {
             Transform spawn = PoolController.Spawn(dat.group, dat.type, null, transform, null);
 
             Fish fish = spawn.GetComponent<Fish>();
-            fish.controller.flockUnit.wanderOrigin = transform.position;
-            fish.controller.flockUnit.wanderOriginLock = true;
+            fish.controller.SetWanderData(transform.position);
             fish.controller.waypoint = null;
 
             mSpawnTracker.Register(fish);

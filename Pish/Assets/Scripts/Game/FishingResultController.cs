@@ -40,9 +40,9 @@ public class FishingResultController : BaseResultController {
     void OnFishSpawn(EntityBase ent) {
         Fish f = ent as Fish;
         f.state = Fish.StateStunned;
-        f.controller.flockUnit.enabled = false;
+        //f.controller.flockUnit.enabled = false;
 
-        Rigidbody body = f.controller.flockUnit.body;
+        Rigidbody body = f.rigidbody;
 
         Vector2 vel = M8.MathUtil.Rotate(Vector2.up, Random.Range(-fishTossAngleRange * 0.5f, fishTossAngleRange * 0.5f) * Mathf.Deg2Rad);
         vel *= Random.Range(fishSpeedMin, fishSpeedMax);

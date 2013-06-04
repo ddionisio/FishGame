@@ -55,8 +55,7 @@ public class FishStar : Fish {
         yield return new WaitForFixedUpdate();
                 
         controller.curMoveMode = FishController.MoveMode.Wander;
-        controller.flockUnit.wanderOrigin = GetWanderPoint();
-        controller.flockUnit.wanderOriginLock = true;
+        controller.SetWanderData(GetWanderPoint());
         state = StateNormal;
 
         float startTime = Time.fixedTime;
@@ -67,7 +66,7 @@ public class FishStar : Fish {
 
             if(curTime >= switchPointDelay) {
                 //change wander point
-                controller.flockUnit.wanderOrigin = GetWanderPoint();
+                controller.SetWanderData(GetWanderPoint());
 
                 curTime = 0.0f;
             }

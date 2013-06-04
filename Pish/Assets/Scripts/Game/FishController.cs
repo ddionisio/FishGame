@@ -2,170 +2,182 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class FishController : MonoBehaviour {
-    public enum MoveMode {
-        Fall,
-        Wander,
-        Path,
-        Chase,
+public class FishController : FishControllerBase {
+    public enum BodyAnimState {
+        normal,
+        fear,
+        stun,
+        chase,
 
-        NumModes
+        NumBodyAnimStates
     }
 
-    public delegate void OnMoveModeChanged(FishController ctrl);
-
-    public bool waypointPingPing = false;
     public float waypointApproxRadius = 0.1f;
 
     public float fallSpeedLimit = 2.5f;
 
-    public PlayerSensor playerSensor;
-
-    public bool playerHitInvulnerable = false;
     public bool playerChase = false; //chase player, sensor needs to be valid
     public float playerChaseMaxSpeed = 30.0f;
-    public bool playerContactStun = false; //stun player
-    public float playerContactEnergy = 0.0f; //reduce player's energy
-    public float playerContactPushSpeed = 0.0f;
 
-    public event OnMoveModeChanged moveModeChangedCallback;
+    //render data
+    public Transform bodyHolder;
 
-    private MoveMode mCurMoveMode = MoveMode.NumModes;
-    private MoveMode mPrevMoveMode = MoveMode.NumModes;
+    public tk2dAnimatedSprite bodyAnim;
+    public tk2dAnimatedSprite finAnim;
+    public tk2dAnimatedSprite tailAnim;
+
+    public float rotSpeedScale = 10.0f;
+
+    public tk2dSprite[] finCopies; //other fins to duplicate frame from finAnim
+        
     private FlockUnit mFlockUnit;
-    private PlayerSensor mPlayerSensor;
 
-    private string mCurWaypoint;
-    private bool mCurWaypointReverse = false;
-    private List<Transform> mCurWaypointList;
-    private int mCurWaypointInd;
     private float mPrevFlockUnitMaxSpeed;
 
-    public string waypoint {
-        get { return mCurWaypoint; }
-        set {
-            mCurWaypoint = value;
+    private int[] mBodyAnimStateIds;
 
-            //hm...
-            if(mCurMoveMode == MoveMode.Chase) {
-                if(!string.IsNullOrEmpty(value)) {
-                    mPrevMoveMode = MoveMode.Path;
-                }
-                else {
-                    mPrevMoveMode = MoveMode.Wander;
-                }
-            }
-            else {
-                if(!string.IsNullOrEmpty(value)) {
-                    curMoveMode = MoveMode.Path;
-                }
-                else {
-                    curMoveMode = MoveMode.Wander;
-                }
-            }
-        }
-    }
-    
+    private TransAnimRotWave[] mRotAnims;
+    private float[] mRotAnimSpeeds;
+    private bool mAvoiding = false;
+
     public FlockUnit flockUnit {
         get { return mFlockUnit; }
     }
 
-    public MoveMode curMoveMode {
-        get { return mCurMoveMode; }
-        set {
-            if(mCurMoveMode != value) {
-                //prev
-                mPrevMoveMode = mCurMoveMode;
+    public override void SpawnStart() {
+        //determine fin and tail
+        //mSpawnFinInd != -1 mSpawnTailInd != -1
 
-                switch(mPrevMoveMode) {
-                    case MoveMode.Chase:
-                        mFlockUnit.moveTarget = null;
-                        break;
-                }
+        //play first fin, copy clip to others
+        //make sure mode is random frame
+        if(finAnim != null) {
+            finAnim.Play();
+            tk2dSpriteCollectionData sprDat = finAnim.Collection;
+            int sprInd = finAnim.spriteId;
 
-                mCurMoveMode = value;
-
-                Debug.Log(name + "mode change: " + mCurMoveMode);
-
-                //new
-                switch(mCurMoveMode) {
-                    case MoveMode.Fall:
-                        collider.enabled = true;
-                        mFlockUnit.enabled = true;
-                        mFlockUnit.groupMoveEnabled = false;
-                        mFlockUnit.wanderEnabled = false;
-                        mFlockUnit.body.useGravity = true;
-                        mFlockUnit.maxSpeed = fallSpeedLimit;
-                        break;
-
-                    case MoveMode.Wander:
-                        collider.enabled = true;
-                        mFlockUnit.enabled = true;
-                        mFlockUnit.groupMoveEnabled = true;
-                        mFlockUnit.wanderEnabled = true;
-                        mFlockUnit.body.useGravity = false;
-                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
-                        break;
-
-                    case MoveMode.Path:
-                        collider.enabled = true;
-                        mFlockUnit.enabled = true;
-                        mFlockUnit.groupMoveEnabled = true;
-                        mFlockUnit.wanderEnabled = false;
-                        mFlockUnit.body.useGravity = false;
-                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
-
-                        mCurWaypointList = WaypointManager.instance.GetWaypoints(mCurWaypoint);
-
-                        //get nearest point
-                        mCurWaypointInd = 0;
-
-                        Vector2 pos = transform.position;
-                        float smallestSqMag = float.MaxValue;
-                        for(int i = 0; i < mCurWaypointList.Count; i++) {
-                            Vector2 wp = mCurWaypointList[i].position;
-                            float sqMag = (pos - wp).sqrMagnitude;
-                            if(sqMag < smallestSqMag) {
-                                mCurWaypointInd = i;
-                                smallestSqMag = sqMag;
-                            }
-                        }
-
-                        mCurWaypointReverse = false;
-                        
-                        GotoCurrentPath();
-                        break;
-
-                    case MoveMode.Chase:
-                        collider.enabled = true;
-                        mFlockUnit.enabled = true;
-                        mFlockUnit.groupMoveEnabled = false;
-                        mFlockUnit.wanderEnabled = false;
-                        mFlockUnit.body.useGravity = false;
-                        mFlockUnit.maxSpeed = playerChaseMaxSpeed;
-                        break;
-
-                    case MoveMode.NumModes:
-                        collider.enabled = false;
-                        mFlockUnit.enabled = false;
-                        mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
-                        break;
-                }
-
-                if(moveModeChangedCallback != null)
-                    moveModeChangedCallback(this);
+            foreach(tk2dSprite spr in finCopies) {
+                spr.SwitchCollectionAndSprite(sprDat, sprInd);
             }
+        }
+
+        if(tailAnim != null) {
+            //make sure mode is random frame
+            tailAnim.Play();
+        }
+        //
+
+        //initial movement animation
+        mAvoiding = flockUnit.numAvoid > 0;
+
+        for(int i = 0; i < mRotAnimSpeeds.Length; i++) {
+            mRotAnims[i].enabled = true;
+            mRotAnims[i].speed = mRotAnimSpeeds[i];
+        }
+
+        SetBodyAnimNormal();
+    }
+
+    public override void Follow(Transform t) {
+        Debug.Log("follow: " + t.name);
+        curMoveMode = MoveMode.Chase;
+        mFlockUnit.moveTarget = t;
+    }
+
+    public override void SetWanderData(Vector3 origin) {
+        mFlockUnit.wanderOrigin = origin;
+        mFlockUnit.wanderOriginLock = true;
+    }
+
+    public override void SetWanderData(Vector3 origin, float radius) {
+        mFlockUnit.wanderOrigin = origin;
+        mFlockUnit.wanderRadius = radius;
+        mFlockUnit.wanderOriginLock = true;
+    }
+
+    protected override void OnMoveModeChange() {
+        switch(prevMoveMode) {
+            case MoveMode.Fall:
+                transform.up = Vector3.up;
+                rigidbody.constraints |= RigidbodyConstraints.FreezeRotationZ;
+                break;
+
+            case MoveMode.Chase:
+                mFlockUnit.moveTarget = null;
+                break;
+        }
+                
+        //new
+        switch(curMoveMode) {
+            case MoveMode.Fall:
+                collider.enabled = true;
+                mFlockUnit.enabled = true;
+                mFlockUnit.groupMoveEnabled = false;
+                mFlockUnit.wanderEnabled = false;
+                mFlockUnit.body.useGravity = true;
+                mFlockUnit.maxSpeed = fallSpeedLimit;
+
+                rigidbody.constraints &= ~RigidbodyConstraints.FreezeRotationZ;
+
+                //stop fins and tail animation
+                foreach(TransAnimRotWave rotAnims in mRotAnims) {
+                    rotAnims.enabled = false;
+                }
+
+                bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.stun]);
+                break;
+
+            case MoveMode.Wander:
+                collider.enabled = true;
+                mFlockUnit.enabled = true;
+                mFlockUnit.groupMoveEnabled = true;
+                mFlockUnit.wanderEnabled = true;
+                mFlockUnit.body.useGravity = false;
+                mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
+
+                SetBodyAnimNormal();
+                break;
+
+            case MoveMode.Path:
+                collider.enabled = true;
+                mFlockUnit.enabled = true;
+                mFlockUnit.groupMoveEnabled = true;
+                mFlockUnit.wanderEnabled = false;
+                mFlockUnit.body.useGravity = false;
+                mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
+
+                WaypointSetToNearestIndex();
+                mFlockUnit.moveTarget = currentWaypoint;
+
+                SetBodyAnimNormal();
+                break;
+
+            case MoveMode.Chase:
+                collider.enabled = true;
+                mFlockUnit.enabled = true;
+                mFlockUnit.groupMoveEnabled = false;
+                mFlockUnit.wanderEnabled = false;
+                mFlockUnit.body.useGravity = false;
+                mFlockUnit.maxSpeed = playerChaseMaxSpeed;
+
+                bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.chase]);
+                break;
+
+            case MoveMode.NumModes:
+                mFlockUnit.maxSpeed = mPrevFlockUnitMaxSpeed;
+                mFlockUnit.ResetData();
+                mFlockUnit.enabled = false;
+
+                collider.enabled = false;
+                break;
         }
     }
 
-    public void Follow(Transform t) {
-        Debug.Log("follow: " + t.name);
-        curMoveMode = MoveMode.Chase;
-        flockUnit.moveTarget = t;
+    protected override bool IsPathDone() {
+        return mFlockUnit.moveTargetDistance <= waypointApproxRadius;
     }
-
-    void OnDestroy() {
-        moveModeChangedCallback = null;
+        
+    protected override void OnGotoPath(Transform t) {
+        mFlockUnit.moveTarget = t;
     }
 
     void Awake() {
@@ -177,52 +189,51 @@ public class FishController : MonoBehaviour {
             playerSensor.addCallback += OnPlayerSensorAdded;
             playerSensor.removeCallback += OnPlayerSensorRemoved;
         }
-    }
 
-    // Update is called once per frame
-    void Update() {
-        switch(mCurMoveMode) {
-            case MoveMode.Path:
-                if(mFlockUnit.moveTargetDistance <= waypointApproxRadius) {
-                    if(mCurWaypointReverse) {
-                        mCurWaypointInd--;
-                        if(mCurWaypointInd == -1) {
-                            if(waypointPingPing) {
-                                mCurWaypointInd = 0;
-                                mCurWaypointReverse = false;
-                            }
-                            else {
-                                mCurWaypointInd = mCurWaypointList.Count-1;
-                            }
-                        }
-                    }
-                    else {
-                        mCurWaypointInd++;
-                        if(mCurWaypointInd == mCurWaypointList.Count) {
-                            if(waypointPingPing) {
-                                mCurWaypointInd = mCurWaypointList.Count - 1;
-                                mCurWaypointReverse = true;
-                            }
-                            else {
-                                mCurWaypointInd = 0;
-                            }
-                        }
-                    }
+        mBodyAnimStateIds = new int[(int)BodyAnimState.NumBodyAnimStates];
+        for(int i = 0; i < mBodyAnimStateIds.Length; i++) {
+            mBodyAnimStateIds[i] = bodyAnim.GetClipIdByName(((BodyAnimState)i).ToString());
+        }
 
-                    GotoCurrentPath();
-                }
-                break;
+        mRotAnims = GetComponentsInChildren<TransAnimRotWave>(true);
+        mRotAnimSpeeds = new float[mRotAnims.Length];
+        for(int i = 0; i < mRotAnimSpeeds.Length; i++) {
+            mRotAnimSpeeds[i] = mRotAnims[i].speed;
         }
     }
 
+    void LateUpdate() {
+        switch(curMoveMode) {
+            case MoveMode.Wander:
+            case MoveMode.Path:
+                //being chased?
+                bool avoid = flockUnit.numAvoid > 0;
+                if(mAvoiding != avoid) {
+                    mAvoiding = avoid;
+
+                    SetBodyAnimNormal();
+
+                    for(int i = 0; i < mRotAnimSpeeds.Length; i++) {
+                        mRotAnims[i].speed = Mathf.Sign(mRotAnimSpeeds[i]) * (Mathf.Abs(mRotAnimSpeeds[i]) + rotSpeedScale * flockUnit.curSpeed);
+                    }
+                }
+                break;
+        }
+
+        //determine facing
+        Vector3 bodyS = bodyHolder.localScale;
+        bodyS.x = flockUnit.dir.x > 0.0f ? -Mathf.Abs(bodyS.x) : Mathf.Abs(bodyS.x);
+        bodyHolder.localScale = bodyS;
+    }
+    
     void OnPlayerSensorAdded(PlayerController unit) {
         if(playerChase) {
             Debug.Log("chase: " + unit.name);
 
-            if(mCurMoveMode == MoveMode.Chase) {
+            if(curMoveMode == MoveMode.Chase) {
                 mFlockUnit.moveTarget = unit.transform;
             }
-            else if(mCurMoveMode != MoveMode.Fall || mCurMoveMode != MoveMode.NumModes) {
+            else if(curMoveMode != MoveMode.Fall || curMoveMode != MoveMode.NumModes) {
                 curMoveMode = MoveMode.Chase;
                 mFlockUnit.moveTarget = unit.transform;
             }
@@ -230,12 +241,19 @@ public class FishController : MonoBehaviour {
     }
 
     void OnPlayerSensorRemoved(PlayerController unit) {
+        Debug.Log("chase done: " + mFlockUnit.moveTarget + " unit: "+unit);
         if(mFlockUnit.moveTarget == unit.transform) {
-            curMoveMode = mPrevMoveMode;
+            Debug.Log("changing back to: "+prevMoveMode);
+            curMoveMode = prevMoveMode;
         }
     }
 
-    private void GotoCurrentPath() {
-        mFlockUnit.moveTarget = mCurWaypointList[mCurWaypointInd];
+    void SetBodyAnimNormal() {
+        if(mAvoiding) {
+            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.fear]);
+        }
+        else {
+            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.normal]);
+        }
     }
 }

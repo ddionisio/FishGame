@@ -187,7 +187,6 @@ public class Player : EntityBase {
         UserData.instance.SetString(lastLevelPlayedKey, Application.loadedLevelName);
 
         mScore = 0.0f;
-        mCurCounter = 1.0f;
         mCounterProcessEnabled = false;
         mNumDeath = 0;
         mRescueCount = 0;
@@ -282,13 +281,21 @@ public class Player : EntityBase {
         //checkpoint?
         Checkpoint checkpoint = c.GetComponent<Checkpoint>();
         if(checkpoint != null) {
-            if(mLastCheckpoint != null)
+            if(mLastCheckpoint != checkpoint) {
                 mLastCheckpoint.SetOpen(false);
 
-            mLastCheckpoint = checkpoint;
-            mLastCheckpoint.SetOpen(true);
+                mLastCheckpoint = checkpoint;
+                mLastCheckpoint.SetOpen(true);
 
-            mLastSpawnPos = mLastCheckpoint.spawnPoint.position;
+                mLastSpawnPos = mLastCheckpoint.spawnPoint.position;
+
+                //restore battery and energy
+                if(mStats.curBattery < mStats.batteryStart)
+                    mStats.curBattery = mStats.batteryStart;
+
+                if(mController.jumpSpecial != null) 
+                    mController.jumpSpecial.SetCharge(mController, mController.jumpSpecial.maxCharge);
+            }
         }
         else {
             //collect?
@@ -347,6 +354,8 @@ public class Player : EntityBase {
 
             case Collectible.Type.Collect:
                 mCurCounter += collect.fvalue;
+
+                stats.curBattery += collect.fvalue*2.0f;
 
                 mScore++;
                 mHUD.RefreshFishScore(mScore);
