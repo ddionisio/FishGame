@@ -15,8 +15,15 @@ public class CollectibleEntity : EntityBase {
 
     private NGUIPointAt mHUDPointIndicator;
 
+    private bool mDeactivateOnCollect = false;
+
     public Collectible collectible {
         get { return mCollectible; }
+    }
+
+    public bool deactivateOnCollect {
+        get { return mDeactivateOnCollect; }
+        set { mDeactivateOnCollect = value; }
     }
 
     protected override void OnDespawned() {
@@ -41,6 +48,8 @@ public class CollectibleEntity : EntityBase {
 
         collider.enabled = true;
 
+        mDeactivateOnCollect = false;
+
         if(hudPointerIndex >= 0 && mHUD != null) {
             mHUDPointIndicator = mHUD.AllocatePointer(hudPointerIndex);
             mHUDPointIndicator.SetPOI(transform);
@@ -64,7 +73,7 @@ public class CollectibleEntity : EntityBase {
         base.Awake();
 
         mCollectible = GetComponent<Collectible>();
-        mCollectible.collectedCallback += Release;
+        mCollectible.collectedCallback += OnCollect;
 
         if(tweenSpawn != null) {
             tweenSpawn.enabled = false;
@@ -79,6 +88,13 @@ public class CollectibleEntity : EntityBase {
         }
 
         collider.enabled = false;
+    }
+
+    void OnCollect() {
+        if(mDeactivateOnCollect)
+            gameObject.SetActive(false);
+        else
+            Release();
     }
 
     void OnTweenFinished (UITweener tween) {

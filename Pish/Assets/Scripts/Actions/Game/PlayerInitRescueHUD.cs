@@ -12,11 +12,15 @@ namespace M8.PlayMaker {
         [RequiredField]
         public FsmGameObject rescueContainer;
 
+        [UIHint(UIHint.Variable)]
+        public FsmInt rescueCountOut;
+
         public override void Reset() {
             base.Reset();
 
             template = null;
             rescueContainer = null;
+            rescueCountOut = null;
         }
 
         // Code that runs on entering the state.
@@ -26,6 +30,9 @@ namespace M8.PlayMaker {
             int numRescue = rescueContainer.Value.transform.GetChildCount();
 
             mComp.hud.RescueInit(template.Value, numRescue);
+
+            if(!rescueCountOut.IsNone)
+                rescueCountOut.Value = numRescue;
 
             Finish();
         }

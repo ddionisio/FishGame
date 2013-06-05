@@ -85,7 +85,7 @@ public class RescueGameData : GameData.TypeData {
     }
 
     public override string GetScoreString(bool best) {
-        return "";
+        return string.Format(best ? bestFormat : format, GetScore(best));
     }
 
     public override void SavePlayerScore(Player player) {
@@ -103,6 +103,8 @@ public class RescueGameData : GameData.TypeData {
 
         //time score
         float time = player.hud.timerCurrent;
+
+        Debug.Log("time taken: " + time);
 
         if(timeCriterias != null && timeCriterias.Length > 0) {
             float lastCriteria = 0.0f;

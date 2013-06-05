@@ -9,6 +9,7 @@ public class Collectible : MonoBehaviour {
         Energy,
         Collect,
         Rescue,
+        Treasure,
 
         NumTypes
     }

@@ -54,7 +54,7 @@ public class FishStar : Fish {
     IEnumerator DoIt() {
         yield return new WaitForFixedUpdate();
                 
-        controller.curMoveMode = FishController.MoveMode.Wander;
+        controller.curMoveMode = FishController.MoveMode.Idle;
         controller.SetWanderData(GetWanderPoint());
         state = StateNormal;
 

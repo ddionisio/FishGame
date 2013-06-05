@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class FishControllerBase : MonoBehaviour {
     public enum MoveMode {
         Fall,
-        Wander,
+        Idle,
         Path,
         Chase,
 
@@ -39,7 +39,7 @@ public class FishControllerBase : MonoBehaviour {
                     mPrevMoveMode = MoveMode.Path;
                 }
                 else {
-                    mPrevMoveMode = MoveMode.Wander;
+                    mPrevMoveMode = MoveMode.Idle;
                 }
             }
             else {
@@ -47,7 +47,7 @@ public class FishControllerBase : MonoBehaviour {
                     curMoveMode = MoveMode.Path;
                 }
                 else {
-                    curMoveMode = MoveMode.Wander;
+                    curMoveMode = MoveMode.Idle;
                 }
             }
         }
@@ -92,6 +92,12 @@ public class FishControllerBase : MonoBehaviour {
 
     public virtual void SetWanderData(Vector3 origin, float radius) {
     }
+
+    public virtual void OnPlayerContact(PlayerController pc, ControllerColliderHit hit) {
+    }
+
+    public virtual void RefreshAnimation() {
+    }
     
     protected virtual void OnMoveModeChange() {
     }
@@ -116,35 +122,44 @@ public class FishControllerBase : MonoBehaviour {
         switch(mCurMoveMode) {
             case MoveMode.Path:
                 if(IsPathDone()) {
-                    if(mCurWaypointReverse) {
-                        mCurWaypointInd--;
-                        if(mCurWaypointInd == -1) {
-                            if(waypointPingPing) {
-                                mCurWaypointInd = 0;
-                                mCurWaypointReverse = false;
-                            }
-                            else {
-                                mCurWaypointInd = mCurWaypointList.Count - 1;
-                            }
-                        }
-                    }
-                    else {
-                        mCurWaypointInd++;
-                        if(mCurWaypointInd == mCurWaypointList.Count) {
-                            if(waypointPingPing) {
-                                mCurWaypointInd = mCurWaypointList.Count - 1;
-                                mCurWaypointReverse = true;
-                            }
-                            else {
-                                mCurWaypointInd = 0;
-                            }
-                        }
-                    }
-
-                    OnGotoPath(mCurWaypointList[mCurWaypointInd]);
+                    WaypointNext();
                 }
                 break;
         }
+    }
+
+    void WaypointNext() {
+        if(mCurWaypointReverse) {
+            mCurWaypointInd--;
+            if(mCurWaypointInd == -1) {
+                if(waypointPingPing) {
+                    mCurWaypointInd = 0;
+                    mCurWaypointReverse = false;
+                }
+                else {
+                    mCurWaypointInd = mCurWaypointList.Count - 1;
+                }
+            }
+        }
+        else {
+            mCurWaypointInd++;
+            if(mCurWaypointInd == mCurWaypointList.Count) {
+                if(waypointPingPing) {
+                    mCurWaypointInd = mCurWaypointList.Count - 1;
+                    mCurWaypointReverse = true;
+                }
+                else {
+                    mCurWaypointInd = 0;
+                }
+            }
+        }
+
+        OnGotoPath(mCurWaypointList[mCurWaypointInd]);
+    }
+
+    protected void WaypointReverse() {
+        mCurWaypointReverse = !mCurWaypointReverse;
+        WaypointNext();
     }
 
     protected void WaypointSetToNearestIndex() {

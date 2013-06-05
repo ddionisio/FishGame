@@ -29,6 +29,18 @@
 			"criteriaBonusMod":2.0,
 			"format":"TIME: {0:D2}:{1:D2}:{2:D2}",
 			"bestFormat":"BEST TIME: {0:D2}:{1:D2}:{2:D2}"
+		},
+		
+		{ "$type":"RescueGameData",
+			"level":"rescue1",
+			"criterias":[1500.0, 3000.0, 6000.0],
+			"timeCriterias":[900.0, 600.0, 300.0],
+			"rescueScore":100.0,
+			"timeCriteriaScore":500.0,
+			"timeBonusMod":2.0,
+			"noDeathBonus":2000.0,
+			"format":"FISHNESS: {0:D7}",
+			"bestFormat":"BEST FISHNESS: {0:D7}"
 		}
 	]
 }

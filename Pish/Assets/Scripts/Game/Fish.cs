@@ -74,8 +74,10 @@ public class Fish : EntityBase {
             pushReturnSpeed = pushForwardSpeed;
         }
 
-        if(pushBackSpeed > 0.0f)
+        if(rigidbody != null && !rigidbody.isKinematic && pushBackSpeed > 0.0f)
             rigidbody.velocity = hit.moveDirection * pushBackSpeed;
+
+        mController.OnPlayerContact(pc, hit);
 
         return pushReturnSpeed;
     }
@@ -146,7 +148,7 @@ public class Fish : EntityBase {
         mStats = GetComponent<FishStats>();
         mStats.changeCallback += OnStatChange;
 
-        mController = GetComponent<FishController>();
+        mController = GetComponent<FishControllerBase>();
         mController.moveModeChangedCallback += OnMoveModeChanged;
 
         mCollectible = GetComponent<Collectible>();

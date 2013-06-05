@@ -22,13 +22,21 @@ public class BaseResultController : MonoBehaviour {
         GameData.LevelScore bestScore = GameData.instance.GetLevelScore(level, true);
         GameData.LevelScore score = GameData.instance.GetLevelScore(level, false);
 
-        resultLabel.text = score.text;
-        resultSprite.spriteName = score.medalSpriteRef;
-        resultSprite.MakePixelPerfect();
+        if(resultLabel != null)
+            resultLabel.text = score.text;
 
-        resultBestLabel.text = bestScore.text;
-        resultBestSprite.spriteName = bestScore.medalSpriteRef;
-        resultBestSprite.MakePixelPerfect();
+        if(resultSprite != null) {
+            resultSprite.spriteName = score.medalSpriteRef;
+            resultSprite.MakePixelPerfect();
+        }
+
+        if(resultBestLabel != null)
+            resultBestLabel.text = bestScore.text;
+
+        if(resultBestSprite != null) {
+            resultBestSprite.spriteName = bestScore.medalSpriteRef;
+            resultBestSprite.MakePixelPerfect();
+        }
     }
 
     void OnInputContinue(InputManager.Info dat) {

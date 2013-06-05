@@ -531,7 +531,7 @@ public class PlayerController : MonoBehaviour {
 
                     //rope shrink/expand
                     if(mInputEnabled) {
-                        if(mCurInputAxis.y > 0.0f || (mCollFlags & CollisionFlags.Below) == 0)
+                        if((mCurInputAxis.y > 0.0f && (mCollFlags & CollisionFlags.Above) == 0) || (mCurInputAxis.y < 0.0f && (mCollFlags & CollisionFlags.Below) == 0))
                             rope.ExtendLength(-mCurInputAxis.y, dt);
                     }
 
@@ -685,7 +685,8 @@ public class PlayerController : MonoBehaviour {
                             }
                         }
                         else if(jumpSpecial != null) {
-                            jumpSpecial.Act(this);
+                            if(jumpSpecial.Act(this))
+                                mIsLastRopePoint = false;
                         }
                         break;
                 }
@@ -746,14 +747,13 @@ public class PlayerController : MonoBehaviour {
             case State.RopeShoot:
                 if(hit.gameObject.layer == Layers.spike) {
                     LevelController levelCtrl = LevelController.instance;
-
-                    if(state != State.Stunned)
-                        Hurt(levelCtrl.spikeHurtAmount);
-
+                                        
                     state = State.Stunned;
 
                     //bounce off
                     mCurVel = levelCtrl.SpikeBounceOff(hit, mCurVel);
+
+                    Hurt(levelCtrl.spikeHurtAmount);
                 }
                 //check if we hit a wall and determine if we are hurt
                 else if((terrainMask & (1 << hit.gameObject.layer)) != 0) {
@@ -765,10 +765,12 @@ public class PlayerController : MonoBehaviour {
                         Vector2 rV = M8.MathUtil.Reflect(mCurVel, hit.normal);
                         mCurVel = rV.normalized * hurtBounceOffSpeed;
 
-                        if(state != State.Stunned)
-                            Hurt(hurtEnergy);
-
+                        State prevState = state;
+                        
                         state = State.Stunned;
+
+                        if(prevState != State.Stunned)
+                            Hurt(hurtEnergy);
                     }
                     else if(state != State.RopeShoot) {
                         state = State.Normal;

@@ -1,7 +1,14 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Player : EntityBase {
+    public const string levelTimeSceneValueKey = "lvlTime";
+    public const string levelRescueSceneValueKey = "lvlRescue";
+    public const string levelTreasureSceneValueKey = "lvlTreasure";
+    public const string levelTreasureMaxSceneValueKey = "lvlTreasureMax";
+    public const string levelDeathSceneValueKey = "lvlDeath";
+
     public const string lastLevelPlayedKey = "lastLevelPlayed";
 
     public enum CounterMode {
@@ -14,6 +21,8 @@ public class Player : EntityBase {
 
     public float hurtTileMinRes;
     public float hurtTileDelay;
+
+    public bool storeCollectibles = false; //set this to true when there are checkpoints and we are using respawn
 
     private PlayerController mController;
     private PlayerStats mStats;
@@ -30,6 +39,7 @@ public class Player : EntityBase {
     private float mCountdownMax = 60.0f;
 
     private int mRescueCount = 0;
+    private int mTreasureCount = 0;
     private int mNumDeath = 0;
 
     private M8.ImageEffects.Tile mTiler;
@@ -37,14 +47,50 @@ public class Player : EntityBase {
     private Vector2 mLastSpawnPos;
     private Checkpoint mLastCheckpoint;
 
+    private List<CollectibleEntity> mStoredCollectibles;
+
     public static string lastLevel {
         get {
             return UserData.instance.GetString(lastLevelPlayedKey);
         }
     }
 
+    public static float lastLevelTime {
+        get {
+            return SceneState.instance.GetGlobalValueFloat(levelTimeSceneValueKey);
+        }
+    }
+
+    public static int lastLevelRescue {
+        get {
+            return SceneState.instance.GetGlobalValue(levelRescueSceneValueKey);
+        }
+    }
+
+    public static int lastLevelTreasure {
+        get {
+            return SceneState.instance.GetGlobalValue(levelTreasureSceneValueKey);
+        }
+    }
+
+    public static int lastLevelTreasureMax {
+        get {
+            return SceneState.instance.GetGlobalValue(levelTreasureMaxSceneValueKey);
+        }
+    }
+
+    public static int lastLevelDeath {
+        get {
+            return SceneState.instance.GetGlobalValue(levelDeathSceneValueKey);
+        }
+    }
+    
     public int rescueCount {
         get { return mRescueCount; }
+    }
+
+    public int treasureCount {
+        get { return mTreasureCount; }
     }
 
     public int numDeath {
@@ -131,7 +177,6 @@ public class Player : EntityBase {
 
     public float score {
         get { return mScore; }
-        set { mScore = value; }
     }
 
     public PlayerStats stats {
@@ -169,12 +214,56 @@ public class Player : EntityBase {
         mController.curVelocity = Vector2.zero;
         mController.transform.position = mLastSpawnPos;
         mStats.ResetStats();
+
+        if(storeCollectibles) {
+            foreach(CollectibleEntity collectEntity in mStoredCollectibles) {
+                collectEntity.gameObject.SetActive(true);
+                collectEntity.deactivateOnCollect = false;
+                collectEntity.collectible.collectFlagged = false;
+
+                switch(collectEntity.collectible.type) {
+                    case Collectible.Type.Treasure:
+                        mScore -= collectEntity.collectible.fvalue;
+                        mTreasureCount--;
+                        break;
+
+                    case Collectible.Type.Rescue:
+                        mRescueCount--;
+                        break;
+
+                    default:
+                        Debug.LogError("not implemented to restore: " + collectEntity.collectible.type);
+                        break;
+                }
+            }
+
+            mStoredCollectibles.Clear();
+
+            mHUD.RescueRefresh(mRescueCount);
+            mHUD.RefreshFishScore(mScore);
+        }
     }
 
     public void Stop() {
         inputEnabled = false;
         mController.state = PlayerController.State.None;
         mStats.Stop();
+
+        //save some data for use outside game
+        SceneState ss = SceneState.instance;
+        if(ss != null) {
+            ss.SetGlobalValueFloat(levelTimeSceneValueKey, mHUD.timerCurrent, false);
+            ss.SetGlobalValue(levelRescueSceneValueKey, mRescueCount, false);
+            ss.SetGlobalValue(levelTreasureSceneValueKey, mTreasureCount, false);
+            ss.SetGlobalValue(levelDeathSceneValueKey, mNumDeath, false);
+        }
+
+        //get current rank
+
+        //save score
+        GameData.instance.SaveLevelScore(Application.loadedLevelName, this);
+
+        //check if we increase rank
     }
 
     public override void SpawnFinish() {
@@ -190,6 +279,7 @@ public class Player : EntityBase {
         mCounterProcessEnabled = false;
         mNumDeath = 0;
         mRescueCount = 0;
+        mTreasureCount = 0;
 
         mLastSpawnPos = mController.transform.position;
     }
@@ -201,6 +291,9 @@ public class Player : EntityBase {
 
     protected override void Awake() {
         base.Awake();
+
+        if(storeCollectibles)
+            mStoredCollectibles = new List<CollectibleEntity>();
 
         mController = GetComponentInChildren<PlayerController>();
         mController.stateCallback += OnStateChange;
@@ -282,19 +375,31 @@ public class Player : EntityBase {
         Checkpoint checkpoint = c.GetComponent<Checkpoint>();
         if(checkpoint != null) {
             if(mLastCheckpoint != checkpoint) {
-                mLastCheckpoint.SetOpen(false);
+                if(mLastCheckpoint != null)
+                    mLastCheckpoint.SetOpen(false);
 
                 mLastCheckpoint = checkpoint;
                 mLastCheckpoint.SetOpen(true);
 
                 mLastSpawnPos = mLastCheckpoint.spawnPoint.position;
+            }
 
-                //restore battery and energy
-                if(mStats.curBattery < mStats.batteryStart)
-                    mStats.curBattery = mStats.batteryStart;
+            checkpoint.Triggered();
 
-                if(mController.jumpSpecial != null) 
-                    mController.jumpSpecial.SetCharge(mController, mController.jumpSpecial.maxCharge);
+            //restore battery and energy
+            if(mStats.curBattery < mStats.batteryStart)
+                mStats.curBattery = mStats.batteryStart;
+
+            if(mController.jumpSpecial != null)
+                mController.jumpSpecial.SetCharge(mController, mController.jumpSpecial.maxCharge);
+
+            //clear out stored collectibles
+            if(storeCollectibles) {
+                foreach(CollectibleEntity collectEntity in mStoredCollectibles) {
+                    collectEntity.Release();
+                }
+
+                mStoredCollectibles.Clear();
             }
         }
         else {
@@ -314,6 +419,18 @@ public class Player : EntityBase {
                     case Collectible.Type.Rescue:
                         //queue to collect
                         mController.collectSensor.collector.AddToQueue(collect);
+                        break;
+
+                    case Collectible.Type.Treasure:
+                        if(mController.collectSensor.collector.gameObject.activeInHierarchy) {
+                            mController.collectSensor.collector.AddToQueue(collect);
+                        }
+                        else {
+                            //collect immediately
+                            OnCollectQueue(collect);
+                            OnCollect(collect);
+                            collect.Collected();
+                        }
                         break;
                 }
             }
@@ -364,7 +481,25 @@ public class Player : EntityBase {
             case Collectible.Type.Rescue:
                 mRescueCount++;
                 mHUD.RescueRefresh(mRescueCount);
+
+                StoreCollect(collect);
                 break;
+
+            case Collectible.Type.Treasure:
+                mTreasureCount++;
+                mScore += collect.fvalue;
+                mHUD.RefreshFishScore(mScore);
+
+                StoreCollect(collect);
+                break;
+        }
+    }
+
+    void StoreCollect(Collectible collect) {
+        if(storeCollectibles) {
+            CollectibleEntity ce = collect.GetComponent<CollectibleEntity>();
+            ce.deactivateOnCollect = true;
+            mStoredCollectibles.Add(ce);
         }
     }
 

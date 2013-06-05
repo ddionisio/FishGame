@@ -7,9 +7,7 @@ public class FishController : FishControllerBase {
         normal,
         fear,
         stun,
-        chase,
-
-        NumBodyAnimStates
+        chase
     }
 
     public float waypointApproxRadius = 0.1f;
@@ -126,7 +124,7 @@ public class FishController : FishControllerBase {
                 bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.stun]);
                 break;
 
-            case MoveMode.Wander:
+            case MoveMode.Idle:
                 collider.enabled = true;
                 mFlockUnit.enabled = true;
                 mFlockUnit.groupMoveEnabled = true;
@@ -190,10 +188,7 @@ public class FishController : FishControllerBase {
             playerSensor.removeCallback += OnPlayerSensorRemoved;
         }
 
-        mBodyAnimStateIds = new int[(int)BodyAnimState.NumBodyAnimStates];
-        for(int i = 0; i < mBodyAnimStateIds.Length; i++) {
-            mBodyAnimStateIds[i] = bodyAnim.GetClipIdByName(((BodyAnimState)i).ToString());
-        }
+        mBodyAnimStateIds = M8.tk2dUtil.GenerateSpriteIds(bodyAnim, typeof(BodyAnimState));
 
         mRotAnims = GetComponentsInChildren<TransAnimRotWave>(true);
         mRotAnimSpeeds = new float[mRotAnims.Length];
@@ -204,7 +199,7 @@ public class FishController : FishControllerBase {
 
     void LateUpdate() {
         switch(curMoveMode) {
-            case MoveMode.Wander:
+            case MoveMode.Idle:
             case MoveMode.Path:
                 //being chased?
                 bool avoid = flockUnit.numAvoid > 0;
