@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public abstract class ModalLevelDialogBase : UIController {
+public class ModalLevelDialogBase : UIController {
     private int mLevel;
 
     public void Init(int level) {
@@ -10,8 +10,11 @@ public abstract class ModalLevelDialogBase : UIController {
         OnInit(level);
     }
 
-    protected abstract void OnInit(int level);
-    protected abstract void OnPlay();
+    protected virtual void OnInit(int level) {
+    }
+
+    protected virtual void OnPlay() {
+    }
 
 
     protected override void OnActive(bool active) {

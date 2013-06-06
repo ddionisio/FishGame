@@ -78,6 +78,7 @@ public class RescueGameData : GameData.TypeData {
     public float rescueScore = 0.0f; //score for each rescue
     public float timeCriteriaScore = 0.0f; //score for each criteria met
     public float timeBonusMod = 0.0f; //score multiplier per second beyond criteria
+    public float allTreasureBonus = 0.0f; //score added if all treasures found
     public float noDeathBonus = 0.0f; //score multiplier for not getting hit
 
     public override int GetScore(bool best) {
@@ -91,12 +92,16 @@ public class RescueGameData : GameData.TypeData {
     public override void SavePlayerScore(Player player) {
         count = player.rescueCount;
 
-        float score = 0.0f;
+        float score = player.score;
         float rescue = player.rescueCount;
 
         //no death bonus
-        if(player.numDeath == 0)
+        if(player.numDeath <= 0)
             score += noDeathBonus;
+
+        //treasure bonus
+        if(player.treasureCount >= Player.lastLevelTreasureMax)
+            score += allTreasureBonus;
 
         //rescue score
         score += rescue * rescueScore;

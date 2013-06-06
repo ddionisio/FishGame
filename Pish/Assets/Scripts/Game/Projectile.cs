@@ -108,6 +108,12 @@ public class Projectile : EntityBase {
         base.OnDestroy();
     }
 
+    protected override void OnDespawned() {
+        CancelInvoke("OnDeath");
+
+        base.OnDespawned();
+    }
+
     void FixedUpdate() {
         switch(state) {
             case StateNormal:

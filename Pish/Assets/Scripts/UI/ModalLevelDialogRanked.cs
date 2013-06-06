@@ -1,10 +1,10 @@
 using UnityEngine;
 using System.Collections;
 
-public class ModalLevelDialogFishing : ModalLevelDialogBase {
+public class ModalLevelDialogRanked : ModalLevelDialogBase {
     public UISprite rankSprite;
     public UILabel rankLabel;
-    
+
     protected override void OnInit(int level) {
         GameData.LevelScore bestScore = GameData.instance.GetLevelScore(level, true);
 
@@ -21,18 +21,5 @@ public class ModalLevelDialogFishing : ModalLevelDialogBase {
     }
 
     protected override void OnPlay() {
-    }
-
-    void Awake() {
-    }
-
-    // Use this for initialization
-    void Start() {
-
-    }
-
-    // Update is called once per frame
-    void Update() {
-
     }
 }

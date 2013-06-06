@@ -38,6 +38,7 @@
 			"rescueScore":100.0,
 			"timeCriteriaScore":500.0,
 			"timeBonusMod":2.0,
+			"allTreasureBonus":1000.0,
 			"noDeathBonus":2000.0,
 			"format":"FISHNESS: {0:D7}",
 			"bestFormat":"BEST FISHNESS: {0:D7}"
