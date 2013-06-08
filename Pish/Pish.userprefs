@@ -1,13 +1,10 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Game\CollectibleEntity.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Game\Player.cs">
     <Files>
       <File FileName="Assets\Scripts\Game\CollectibleEntity.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\Fish.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\UI\HUD.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\FishController.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Game\PlayerController.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\ModalLevelDialogCollect.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Game\GameData.cs" Line="1" Column="1" />
       <File FileName="Assets\NGUI\Scripts\Interaction\UIButtonKeys.cs" Line="1" Column="1" />
       <File FileName="Assets\NGUI\Scripts\UI\UICamera.cs" Line="1" Column="1" />
@@ -17,20 +14,21 @@
       <File FileName="Assets\M8\Scripts\Core\UserData.cs" Line="1" Column="1" />
       <File FileName="Assets\M8\Scripts\Core\SceneManager.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Actions\Game\PlayerInitRescueHUD.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\Player.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\FishControllerBase.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\FishControllerSimple.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Game\Player.cs" Line="302" Column="39" />
       <File FileName="Assets\Scripts\Game\Projectile.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\FishFireOnSight.cs" Line="1" Column="1" />
       <File FileName="Assets\M8\Scripts\Game\EntityBase.cs" Line="1" Column="1" />
       <File FileName="Assets\M8\Editor\Game\WaypointManagerInspector.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\UI\ModalLevelSelect.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\UI\UILevelItem.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\UI\ModalLevelDialogBase.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\UI\ModalLevelDialogRanked.cs" Line="1" Column="1" />
+      <File FileName="Assets\M8\Scripts\UI\UIModalManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Game\FishingResultController.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Game\BaseResultController.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\Scripts\Game\PlayerController.cs" line="523" />
-      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\Scripts\Game\PlayerController.cs" line="486" />
-    </BreakpointStore>
+    <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

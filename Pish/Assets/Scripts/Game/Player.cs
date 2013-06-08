@@ -11,6 +11,10 @@ public class Player : EntityBase {
 
     public const string lastLevelPlayedKey = "lastLevelPlayed";
 
+    public const string rankUserDataKey = "rank";
+
+    public delegate void Callback(Player p);
+    
     public enum CounterMode {
         None,
         Combo,
@@ -23,6 +27,12 @@ public class Player : EntityBase {
     public float hurtTileDelay;
 
     public bool storeCollectibles = false; //set this to true when there are checkpoints and we are using respawn
+
+    public float warpRadius;
+    public float warpAngleMax;
+    public float warpDelay;
+
+    public event Callback warpDoneCallback;
 
     private PlayerController mController;
     private PlayerStats mStats;
@@ -48,6 +58,11 @@ public class Player : EntityBase {
     private Checkpoint mLastCheckpoint;
 
     private List<CollectibleEntity> mStoredCollectibles;
+    private float mStoredScore=0;
+    private int mStoredTreasureCount=0;
+    private int mStoredRescueCount=0;
+
+    private VortexEffect mVortex;
 
     public static string lastLevel {
         get {
@@ -84,7 +99,7 @@ public class Player : EntityBase {
             return SceneState.instance.GetGlobalValue(levelDeathSceneValueKey);
         }
     }
-    
+
     public int rescueCount {
         get { return mRescueCount; }
     }
@@ -216,26 +231,19 @@ public class Player : EntityBase {
         mStats.ResetStats();
 
         if(storeCollectibles) {
+            Debug.Log("respawning, stored count: " + mStoredCollectibles.Count);
+
             foreach(CollectibleEntity collectEntity in mStoredCollectibles) {
                 collectEntity.gameObject.SetActive(true);
-                collectEntity.deactivateOnCollect = false;
                 collectEntity.collectible.collectFlagged = false;
-
-                switch(collectEntity.collectible.type) {
-                    case Collectible.Type.Treasure:
-                        mScore -= collectEntity.collectible.fvalue;
-                        mTreasureCount--;
-                        break;
-
-                    case Collectible.Type.Rescue:
-                        mRescueCount--;
-                        break;
-
-                    default:
-                        Debug.LogError("not implemented to restore: " + collectEntity.collectible.type);
-                        break;
-                }
             }
+
+            mScore = mStoredScore;
+            mTreasureCount = mStoredTreasureCount;
+            mRescueCount = mStoredRescueCount;
+                        
+            Debug.Log("treasureCount: " + mTreasureCount);
+            Debug.Log("rescueCount: " + mRescueCount);
 
             mStoredCollectibles.Clear();
 
@@ -258,12 +266,12 @@ public class Player : EntityBase {
             ss.SetGlobalValue(levelDeathSceneValueKey, mNumDeath, false);
         }
 
-        //get current rank
-
         //save score
         GameData.instance.SaveLevelScore(Application.loadedLevelName, this);
+    }
 
-        //check if we increase rank
+    public void Warp(bool includeCollector, bool isOut) {
+        StartCoroutine(DoWarp(includeCollector, isOut));
     }
 
     public override void SpawnFinish() {
@@ -281,11 +289,18 @@ public class Player : EntityBase {
         mRescueCount = 0;
         mTreasureCount = 0;
 
+        mStoredScore=0;
+        mStoredTreasureCount=0;
+        mStoredRescueCount=0;
+
         mLastSpawnPos = mController.transform.position;
     }
 
     protected override void OnDestroy() {
         inputEnabled = false;
+
+        warpDoneCallback = null;
+
         base.OnDestroy();
     }
 
@@ -314,6 +329,10 @@ public class Player : EntityBase {
         GameObject camGO = GameObject.FindGameObjectWithTag("MainCamera");
         mCam = camGO.GetComponent<CameraController>();
         mCam.attachTo = controller.transform;
+
+        mVortex = mCam.lookCamera.GetComponent<VortexEffect>();
+        if(mVortex != null)
+            mVortex.enabled = false;
 
         mTiler = mCam.lookCamera.GetComponent<M8.ImageEffects.Tile>();
         mTiler.enabled = false;
@@ -401,6 +420,11 @@ public class Player : EntityBase {
 
                 mStoredCollectibles.Clear();
             }
+
+            //save level data
+            mStoredScore = mScore;
+            mStoredTreasureCount = mTreasureCount;
+            mStoredRescueCount = mRescueCount;
         }
         else {
             //collect?
@@ -445,9 +469,7 @@ public class Player : EntityBase {
                 FishInventory.Item newFish = new FishInventory.Item() { type = collect.svalue, ival = collect.ivalue, fval = collect.fvalue };
                 FishInventory.instance.items.Add(newFish);
 
-                mScore += collect.fvalue * mCurCounter;
-
-                mHUD.RefreshFishScore(mScore);
+                ScoreUpdate(collect.fvalue * mCurCounter);
 
                 if(mCounterMode == CounterMode.Combo) {
                     //update combo
@@ -463,6 +485,7 @@ public class Player : EntityBase {
 
             case Collectible.Type.Energy:
                 stats.curBattery += collect.fvalue;
+                PopUp.instance.SpawnIcon(mController.transform.position, PopUp.Icon.Battery);
 
                 if(mController.jumpSpecial != null)
                     mController.jumpSpecial.SetCharge(mController, mController.jumpSpecial.curCharge + 1);
@@ -473,26 +496,38 @@ public class Player : EntityBase {
                 mCurCounter += collect.fvalue;
 
                 stats.curBattery += collect.fvalue*2.0f;
+                PopUp.instance.SpawnIcon(mController.transform.position, PopUp.Icon.Battery);
 
-                mScore++;
-                mHUD.RefreshFishScore(mScore);
+                ScoreUpdate(1.0f);
                 break;
 
             case Collectible.Type.Rescue:
                 mRescueCount++;
                 mHUD.RescueRefresh(mRescueCount);
 
+                Debug.Log("rescueCount: " + mRescueCount);
+
                 StoreCollect(collect);
                 break;
 
             case Collectible.Type.Treasure:
                 mTreasureCount++;
-                mScore += collect.fvalue;
-                mHUD.RefreshFishScore(mScore);
+
+                ScoreUpdate(collect.fvalue);
+                
+                Debug.Log("treasureCount: " + mTreasureCount);
 
                 StoreCollect(collect);
                 break;
         }
+    }
+
+    void ScoreUpdate(float delta) {
+        mScore += delta;
+
+        mHUD.RefreshFishScore(mScore);
+
+        PopUp.instance.SpawnText(mController.transform.position, "+" + delta);
     }
 
     void StoreCollect(Collectible collect) {
@@ -500,6 +535,8 @@ public class Player : EntityBase {
             CollectibleEntity ce = collect.GetComponent<CollectibleEntity>();
             ce.deactivateOnCollect = true;
             mStoredCollectibles.Add(ce);
+
+            Debug.Log("stored count: " + mStoredCollectibles.Count);
         }
     }
 
@@ -509,6 +546,76 @@ public class Player : EntityBase {
 
     void OnJumpChargeChange(SpecialBase special) {
         mHUD.RefreshBoost(special);
+    }
+
+    IEnumerator DoWarp(bool includeCollector, bool isOut) {
+        WaitForFixedUpdate wait = new WaitForFixedUpdate();
+
+        //yield return wait;
+
+        if(mVortex != null) {
+            Vector3 pPos = mController.transform.position;
+
+            mCam.transform.position = pPos;
+            mCam.attachTo = null;
+
+            if(!isOut) {
+                mController.gameObject.SetActive(false);
+
+                if(includeCollector)
+                    mController.collectSensor.collector.gameObject.SetActive(false);
+            }
+
+            mVortex.enabled = true;
+            mVortex.radius = new Vector2(warpRadius, warpRadius);
+            mVortex.angle = 0.0f;
+            mVortex.center = mCam.lookCamera.WorldToViewportPoint(pPos);
+
+            bool entered = false;
+
+            float time = 0.0f;
+            while(time < warpDelay) {
+                if(time >= warpDelay*0.5f && !entered) {
+                    if(isOut) {
+                        mController.gameObject.SetActive(false);
+
+                        if(includeCollector)
+                            mController.collectSensor.collector.gameObject.SetActive(false);
+                    }
+                    else {
+                        mController.gameObject.SetActive(true);
+                    }
+
+                    entered = true;
+                }
+
+                float t = Mathf.Sin(Mathf.PI*(time/warpDelay));
+                t *= t;
+
+                mVortex.angle = warpAngleMax * t;
+
+                time += Time.fixedDeltaTime;
+                yield return wait;
+            }
+
+            mVortex.enabled = false;
+
+            if(!isOut) {
+                if(includeCollector) {
+                    pPos = mController.transform.position;
+                    Vector3 cPos = mController.collectSensor.collector.transform.position;
+                    mController.collectSensor.collector.transform.position = new Vector3(pPos.x, pPos.y, cPos.z);
+                    mController.collectSensor.collector.gameObject.SetActive(true);
+                }
+            }
+
+            mCam.attachTo = mController.transform;
+        }
+
+        if(warpDoneCallback != null)
+            warpDoneCallback(this);
+
+        yield break;
     }
 
     IEnumerator DoCountdown() {

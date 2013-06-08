@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class ExploreGameData : GameData.TypeData {
+    public override int GetMedalIndex(bool best) {
+        return 0;
+    }
+
     public override int GetScore(bool best) {
         return 0;
     }
@@ -136,11 +140,14 @@ public class GameData : MonoBehaviour {
     public struct HIScore {
         public int score;
         public string rank;
+        public int rankIndex;
+        public int rankValue;
     }
 
     public struct LevelScore {
         public string medalSpriteRef;
         public string text;
+        public int score;
     }
 
     public abstract class TypeData {
@@ -216,8 +223,10 @@ public class GameData : MonoBehaviour {
     }
 
     public class Rank {
-        public int criteria;
-        public string text;
+        public int copper=0;
+        public int silver=0;
+        public int gold=0;
+        public string text="";
     }
 
     public class FileData {
@@ -257,34 +266,57 @@ public class GameData : MonoBehaviour {
     }
 
     public HIScore GetHIScore() {
-        HIScore total = new HIScore() { score = 0, rank = "" };
+        HIScore total = new HIScore() { score = 0, rank = "", rankIndex = 0, rankValue = 0 };
+
+        int copper = 0, silver = 0, gold = 0;
 
         foreach(TypeData dat in mLevels) {
             total.score += dat.GetScore(true);
+
+            int medalInd = dat.GetMedalIndex(true);
+
+            if(medalInd == 1)
+                copper++;
+            else if(medalInd == 2)
+                silver++;
+            else if(medalInd == 3)
+                gold++;
         }
 
-        foreach(Rank rank in mRankings) {
-            if(total.score >= rank.criteria)
+        total.rankValue = gold * 9 + silver * 3 + copper;
+
+        //assumes rank is sorted from lowest to highest, 0 = lowest rank
+        for(int i = mRankings.Length-1; i >= 0; i--) {
+            Rank rank = mRankings[i];
+
+            int rankValue = rank.gold * 9 + rank.silver * 3 + rank.copper;
+
+            if(total.rankValue >= rankValue) {
                 total.rank = rank.text;
-            else
+                total.rankIndex = i;
                 break;
+            }
         }
 
         return total;
     }
 
-    public void GetHIScoreString(out string score, out string rank) {
-        HIScore hiScore = GetHIScore();
+    public void GetHIScoreString(HIScore hiScore, out string score, out string rank) {
         score = string.Format(mScoreFormat, hiScore.score);
         rank = string.Format(mRankFormat, hiScore.rank);
     }
 
+    public void GetHIScoreString(out string score, out string rank) {
+        GetHIScoreString(GetHIScore(), out score, out rank);
+    }
+
     LevelScore _GetLevelScore(TypeData dat, bool best) {
-        LevelScore ret = new LevelScore() { medalSpriteRef = "", text = "" };
+        LevelScore ret = new LevelScore() { medalSpriteRef = "", text = "", score = 0};
         
         int medalInd = dat.GetMedalIndex(best);
         ret.medalSpriteRef = mMedalSpriteRefs[medalInd];
         ret.text = dat.GetScoreString(best);
+        ret.score = dat.GetScore(best);
 
         return ret;
     }
@@ -293,7 +325,7 @@ public class GameData : MonoBehaviour {
         TypeData dat = null;
         if(!mLevelNameRefs.TryGetValue(levelName, out dat)) {
             Debug.LogError("Level score data not found: " + levelName);
-            return new LevelScore() { medalSpriteRef = "", text = "" };
+            return new LevelScore() { medalSpriteRef = "", text = "", score = 0};
         }
 
         return _GetLevelScore(dat, best);
@@ -305,7 +337,7 @@ public class GameData : MonoBehaviour {
         }
 
         Debug.LogError("Invalid level index: " + level);
-        return new LevelScore() { medalSpriteRef = "", text = "" };
+        return new LevelScore() { medalSpriteRef = "", text = "", score = 0};
     }
 
     public void SaveLevelScore(string levelName, Player player) {

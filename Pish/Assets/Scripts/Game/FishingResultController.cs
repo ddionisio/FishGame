@@ -14,6 +14,8 @@ public class FishingResultController : BaseResultController {
     public float fishTossStartDelay;
     public float fishTossDelay;
 
+    public float scaleMod = 2.0f;
+
     protected override void OnDestroy() {
         if(FishInventory.instance != null)
             FishInventory.instance.items.Clear();
@@ -41,6 +43,16 @@ public class FishingResultController : BaseResultController {
         Fish f = ent as Fish;
         f.state = Fish.StateStunned;
         //f.controller.flockUnit.enabled = false;
+
+        TweenScale[] tweeners = f.GetComponentsInChildren<TweenScale>(true);
+        if(tweeners != null && tweeners.Length > 0) {
+            foreach(TweenScale tweener in tweeners) {
+                tweener.to = new Vector3(scaleMod, scaleMod, scaleMod);
+            }
+        }
+        else {
+            f.transform.localScale = new Vector3(scaleMod, scaleMod, scaleMod);
+        }
 
         Rigidbody body = f.rigidbody;
 

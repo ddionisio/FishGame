@@ -24,6 +24,8 @@ public class HUD : MonoBehaviour {
     public string boostInactiveRef;
 
     public UILabel fishCountLabel;
+    public UITweener fishCountTween;
+    public float fishCountSpeed;
 
     public Transform[] pointerHolders;
 
@@ -42,6 +44,10 @@ public class HUD : MonoBehaviour {
     private TimerMode mTimerMode = TimerMode.None;
 
     private HUDRescueItem[] mRescueItems;
+
+    private float mFishCountCur;
+    private int mFishCountRound;
+    private float mFishCountDest;
 
     public float timerCurrent {
         get { return mTimerCurrent; }
@@ -149,7 +155,12 @@ public class HUD : MonoBehaviour {
     }
 
     public void RefreshFishScore(float val) {
-        fishCountLabel.text = Mathf.RoundToInt(val).ToString("D6");
+        mFishCountDest = val;
+        
+        if(fishCountTween != null) {
+            fishCountTween.Reset();
+            fishCountTween.enabled = true;
+        }
     }
 
     public NGUIPointAt AllocatePointer(int ind) {
@@ -183,6 +194,10 @@ public class HUD : MonoBehaviour {
     void Awake() {
         energyLowLabel.SetActive(false);
 
+        if(fishCountTween != null) {
+            fishCountTween.enabled = false;
+        }
+
         mEnergySliderBar = energySlider.foreground.GetComponent<UIWidget>();
 
         if(pointerHolders != null && pointerHolders.Length > 0) {
@@ -211,7 +226,28 @@ public class HUD : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
+        if(mFishCountCur != mFishCountDest) {
+            bool isDec = mFishCountCur > mFishCountDest;
 
+            if(isDec) {
+                mFishCountCur -= fishCountSpeed * Time.deltaTime;
+                if(mFishCountCur < mFishCountDest) {
+                    mFishCountCur = mFishCountDest;
+                }
+            }
+            else {
+                mFishCountCur += fishCountSpeed * Time.deltaTime;
+                if(mFishCountCur > mFishCountDest) {
+                    mFishCountCur = mFishCountDest;
+                }
+            }
+
+            int v = Mathf.RoundToInt(mFishCountCur);
+            if(v != mFishCountRound) {
+                mFishCountRound = v;
+                fishCountLabel.text = mFishCountRound.ToString("D6");
+            }
+        }
     }
 
     void RefreshTimer() {

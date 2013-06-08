@@ -16,17 +16,32 @@ public class LevelSelectController : MonoBehaviour {
     void Start() {
         UserData.instance.SetString(lastLevelSelectKey, Application.loadedLevelName);
 
+        GameData.HIScore score = GameData.instance.GetHIScore();
+
+        //check player ranking
+        int curRank = UserData.instance.GetInt(Player.rankUserDataKey, 0);
+        if(curRank < score.rankIndex) {
+            UserData.instance.SetInt(Player.rankUserDataKey, score.rankIndex);
+            StartCoroutine(NewRankDelay());
+        }
+
         if(scoring != null) {
-            string rank, score;
+            string rankText, scoreText;
 
-            GameData.instance.GetHIScoreString(out score, out rank);
+            GameData.instance.GetHIScoreString(score, out scoreText, out rankText);
 
-            scoring.text = string.Format("{0}\n{1}", score, rank);
+            scoring.text = string.Format("{0}\n{1}", scoreText, rankText);
         }
     }
 
     // Update is called once per frame
     void Update() {
 
+    }
+
+    IEnumerator NewRankDelay() {
+        yield return new WaitForFixedUpdate();
+
+        UIModalManager.instance.ModalOpen("newRank");
     }
 }

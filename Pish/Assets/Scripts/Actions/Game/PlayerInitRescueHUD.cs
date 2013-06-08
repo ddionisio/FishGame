@@ -29,6 +29,8 @@ namespace M8.PlayMaker {
 
             int numRescue = rescueContainer.Value.transform.GetChildCount();
 
+            Debug.Log("numRescue: " + numRescue);
+
             mComp.hud.RescueInit(template.Value, numRescue);
 
             if(!rescueCountOut.IsNone)

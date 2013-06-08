@@ -8,6 +8,8 @@ public class BaseResultController : MonoBehaviour {
     public UILabel resultBestLabel;
     public UISprite resultBestSprite;
 
+    public GameObject newRecordGO;
+
     protected virtual void OnDestroy() {
         if(Main.instance != null && Main.instance.input != null)
             Main.instance.input.RemoveButtonCall(0, InputAction.MenuAccept, OnInputContinue);
@@ -36,6 +38,10 @@ public class BaseResultController : MonoBehaviour {
         if(resultBestSprite != null) {
             resultBestSprite.spriteName = bestScore.medalSpriteRef;
             resultBestSprite.MakePixelPerfect();
+        }
+
+        if(newRecordGO != null) {
+            newRecordGO.SetActive(score.score > 0 && score.score == bestScore.score);
         }
     }
 

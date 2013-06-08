@@ -2,10 +2,18 @@
 	"scoreFormat":"SCORE: {0:D9}",
 	"rankFormat":"RANK: {0}",
 	
-	"ranks" : [
-		{"criteria":0, "text":"Layperson"},
-		{"criteria":1000, "text":"Master Bait"},
-		{"criteria":2000, "text":"Fishanatic"},
+	"ranks" : [										
+		{"text":"Layperson"},
+		
+		{"copper":1, "text":"Ordinary Fisher"},
+		{"copper":3, "text":"So-So Fisher"},
+		
+		{"silver":2, "copper":1, "text":"PhD in Fishness"},
+		{"silver":3, "text":"Fish Gosu"},
+		
+		{"gold":1, "silver":2, "text":"Way of the Fish"},
+		{"gold":2, "silver":1, "text":"Master of the Fish"},
+		{"gold":3, "text":"Legendary Fisher"},
 	],
 	
 	"medalSpriteRefs" : ["rank_nil", "rank_bronze", "rank_silver", "rank_gold"],
@@ -17,31 +25,31 @@
 		
 		{ "$type":"FishingGameData",
 			"level":"fishing1",
-			"criterias":[100.0, 250.0, 300.0],
-			"scoreFormat":"FISHNESS: {0:D7}",
-			"bestScoreFormat":"BEST FISHNESS: {0:D7}"
+			"criterias":[300.0, 600.0, 1200.0],
+			"scoreFormat":"THIS SESSION: {0:D7}",
+			"bestScoreFormat":"FISHNESS: {0:D7}"
 		},
 		
 		{ "$type":"FishingCollectData",
 			"level":"collect1",
 			"criterias":[150.0, 240.0, 300.0],
 			"criteriaScore":1000.0,
-			"criteriaBonusMod":2.0,
-			"format":"TIME: {0:D2}:{1:D2}:{2:D2}",
-			"bestFormat":"BEST TIME: {0:D2}:{1:D2}:{2:D2}"
+			"criteriaBonusMod":4.0,
+			"format":"THIS SESSION: {0:D2}:{1:D2}.{2:D2}",
+			"bestFormat":"TIME: {0:D2}:{1:D2}.{2:D2}"
 		},
 		
 		{ "$type":"RescueGameData",
 			"level":"rescue1",
-			"criterias":[1500.0, 3000.0, 6000.0],
-			"timeCriterias":[900.0, 600.0, 300.0],
+			"criterias":[1000.0, 2600.0, 4650.0],
+			"timeCriterias":[900.0, 600.0, 360.0],
 			"rescueScore":100.0,
-			"timeCriteriaScore":500.0,
+			"timeCriteriaScore":100.0,
 			"timeBonusMod":2.0,
 			"allTreasureBonus":1000.0,
 			"noDeathBonus":2000.0,
-			"format":"FISHNESS: {0:D7}",
-			"bestFormat":"BEST FISHNESS: {0:D7}"
+			"format":"THIS SESSION: {0:D7}",
+			"bestFormat":"EXTRICARENESS: {0:D7}"
 		}
 	]
 }

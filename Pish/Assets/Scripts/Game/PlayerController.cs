@@ -57,6 +57,8 @@ public class PlayerController : MonoBehaviour {
     public SpecialBase[] specials; //corresponds to Special enum
     public SpecialBase jumpSpecial;
 
+    public tk2dAnimatedSprite puff;
+
     public LayerMask terrainMask;
     public LayerMask fishMask;
 
@@ -818,9 +820,28 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    void PuffAt(Vector2 pos) {
+        if(puff != null) {
+            Vector3 puffPos = puff.transform.position;
+            puff.transform.position = new Vector3(pos.x, pos.y, puffPos.z);
+
+            if(puff.gameObject.activeSelf) {
+                puff.Play();
+            }
+            else {
+                puff.gameObject.SetActive(true);
+            }
+        }
+    }
+
     //return speed
     private float FishContact(Vector2 velocity, ControllerColliderHit hit) {
         Fish fish = hit.gameObject.GetComponent<Fish>();
+
+        if(jumpSpecial != null && jumpSpecial.isActing) {
+            PuffAt(hit.point);
+        }
+
         return fish.PlayerContact(this, hit);
     }
 
