@@ -242,7 +242,7 @@ public class PlayerController : MonoBehaviour {
 
                 if(!value) {
                     mCurInputAxis = Vector2.zero;
-                    ShowHookAim(false);
+                    //ShowHookAim(false);
                 }
             }
         }

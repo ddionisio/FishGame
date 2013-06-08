@@ -342,7 +342,7 @@ public class Player : EntityBase {
 
     void OnInputPause(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
-            UIModalManager.instance.ModalOpen("ingameOptions");
+            UIModalManager.instance.ModalOpen("pause");
             Main.instance.sceneManager.Pause();
         }
     }

@@ -36,12 +36,15 @@ public class ModalMain : UIController {
     void OnNew(GameObject go) {
         //create profile
         //stuff
-        Main.instance.sceneManager.LoadScene("intro");
+        //"intro"
+        Main.instance.sceneManager.LoadScene("levelSelect1");
     }
 
     void OnOptions(GameObject go) {
+        UIModalManager.instance.ModalOpen("options");
     }
 
     void OnCredits(GameObject go) {
+        UIModalManager.instance.ModalOpen("credits");
     }
 }
