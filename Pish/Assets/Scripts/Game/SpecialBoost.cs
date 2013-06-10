@@ -11,6 +11,8 @@ public class SpecialBoost : SpecialBase {
 
     public float delay;
 
+    public SoundPlayer soundAct;
+
     private float mCurTime;
     private float mRopingDir;
 
@@ -69,6 +71,9 @@ public class SpecialBoost : SpecialBase {
         }
 
         mCurTime = 0.0f;
+
+        if(soundAct != null)
+            soundAct.Play();
     }
 
     protected override void OnStop(PlayerController pc) {

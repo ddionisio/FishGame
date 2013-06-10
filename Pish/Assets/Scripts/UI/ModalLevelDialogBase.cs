@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 
 public class ModalLevelDialogBase : UIController {
+    public string soundPlay;
+
     private int mLevel;
 
     public void Init(int level) {
@@ -35,6 +37,9 @@ public class ModalLevelDialogBase : UIController {
 
     void OnInputPlay(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
+            if(!string.IsNullOrEmpty(soundPlay) && SoundPlayerGlobal.instance != null)
+                SoundPlayerGlobal.instance.Play(soundPlay);
+
             OnPlay();
 
             Main.instance.sceneManager.LoadScene(GameData.instance.GetLevelName(mLevel));

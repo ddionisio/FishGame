@@ -50,6 +50,11 @@ public class PlayerController : MonoBehaviour {
     public Color hookAimValidColor = new Color(0.0f, 1.0f, 0.0f, 0.5f);
     public Color hookAimInvalidColor = new Color(1.0f, 0.0f, 0.0f, 0.5f);
 
+    public SoundPlayer hookShotSound;
+    public SoundPlayer hookShotHitSound;
+
+    public SoundPlayer hitSound;
+
     public RopeController rope;
     public FishSensor fishSensor;
     public CollectibleSensor collectSensor;
@@ -178,6 +183,9 @@ public class PlayerController : MonoBehaviour {
                         break;
 
                     case State.RopeShoot:
+                        if(hookShotSound != null)
+                            hookShotSound.Play();
+
                         if(mCharCtrl.isGrounded)
                             mCurVel.x = 0.0f;
 
@@ -185,6 +193,9 @@ public class PlayerController : MonoBehaviour {
                         break;
 
                     case State.Roping:
+                        if(hookShotHitSound != null)
+                            hookShotHitSound.Play();
+
                         animator.mode = PlayerAnimator.Mode.Normal;
                         animator.RevertUpCancel();
                         animator.transform.up = Vector3.up;
@@ -840,6 +851,9 @@ public class PlayerController : MonoBehaviour {
 
         if(jumpSpecial != null && jumpSpecial.isActing) {
             PuffAt(hit.point);
+
+            if(hitSound != null)
+                hitSound.Play();
         }
 
         return fish.PlayerContact(this, hit);

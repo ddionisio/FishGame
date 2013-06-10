@@ -8,19 +8,32 @@ public class Checkpoint : MonoBehaviour {
     public GameObject triggerActive; //this should auto-disable
     public Transform spawnPoint; //position to spawn
 
+    public SoundPlayer openSound;
+
+    private bool mIsOpen;
+
     public void Triggered() {
         if(triggerActive != null)
             triggerActive.SetActive(true);
     }
 
     public void SetOpen(bool open) {
-        if(openActive != null)
-            openActive.SetActive(open);
+        if(mIsOpen != open) {
+            mIsOpen = open;
 
-        body.Play(open ? "open" : "close");
+            if(openActive != null)
+                openActive.SetActive(open);
+
+            body.Play(open ? "open" : "close");
+
+            if(open && openSound != null)
+                openSound.Play();
+        }
     }
 
     void Awake() {
+        mIsOpen = false;
+
         if(openActive != null)
             openActive.SetActive(false);
 

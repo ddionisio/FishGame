@@ -25,12 +25,17 @@ public class Player : EntityBase {
 
     public float hurtTileMinRes;
     public float hurtTileDelay;
+    public SoundPlayer hurtSound;
 
+    public SoundPlayer collectSound;
+        
     public bool storeCollectibles = false; //set this to true when there are checkpoints and we are using respawn
 
     public float warpRadius;
     public float warpAngleMax;
     public float warpDelay;
+
+    public SoundPlayer warpSound;
 
     public event Callback warpDoneCallback;
 
@@ -376,17 +381,22 @@ public class Player : EntityBase {
     }
 
     void OnHurt(PlayerController pc, float energy) {
-        //quick screen distort
-        if(!mTiler.enabled) {
-            StartCoroutine(mTiler.DoTilePulse(hurtTileMinRes, hurtTileDelay));
+        if(energy != 0.0f) {
+            //quick screen distort
+            if(!mTiler.enabled) {
+                StartCoroutine(mTiler.DoTilePulse(hurtTileMinRes, hurtTileDelay));
+            }
+
+            if(hurtSound != null)
+                hurtSound.Play();
+
+            float prevBattery = stats.curBattery;
+
+            stats.curBattery -= energy;
+
+            if(stats.curBattery != prevBattery && stats.curBattery == 0.0f)
+                mNumDeath++;
         }
-
-        float prevBattery = stats.curBattery;
-
-        stats.curBattery -= energy;
-
-        if(stats.curBattery != prevBattery && stats.curBattery == 0.0f)
-            mNumDeath++;
     }
 
     void OnControllerTriggerEnter(Collider c) {
@@ -542,6 +552,8 @@ public class Player : EntityBase {
 
     void OnCollect(Collectible collect) {
         // Debug.Log("collected: " + collect.type);
+        if(collectSound != null)
+            collectSound.Play();
     }
 
     void OnJumpChargeChange(SpecialBase special) {
@@ -554,6 +566,9 @@ public class Player : EntityBase {
         //yield return wait;
 
         if(mVortex != null) {
+            if(warpSound != null)
+                warpSound.Play();
+
             Vector3 pPos = mController.transform.position;
 
             mCam.transform.position = pPos;
