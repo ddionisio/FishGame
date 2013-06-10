@@ -4,18 +4,18 @@ using UnityEngine;
 
 namespace HutongGames.PlayMaker.Actions
 {
-	[ActionCategory("ToolKit 2D")]
-	[Tooltip("Resume a sprite animation. Use Tk2dPauseAnimation for dynamic control. \nNOTE: The Game Object must have a tk2dAnimatedSprite attached.")]
+    [ActionCategory("2D ToolKit/Sprite")]
+    [Tooltip("Resume a sprite animation. Use Tk2dPauseAnimation for dynamic control. \nNOTE: The Game Object must have a tk2dSpriteAnimator attached.")]
 	[HelpUrl("https://hutonggames.fogbugz.com/default.asp?W721")]
 	public class Tk2dResumeAnimation : FsmStateAction
 	{
 		[RequiredField]
-		[Tooltip("The Game Object to work with. NOTE: The Game Object must have a tk2dAnimatedSprite component attached.")]
-		[CheckForComponent(typeof(tk2dAnimatedSprite))]
+        [Tooltip("The Game Object to work with. NOTE: The Game Object must have a tk2dSpriteAnimator component attached.")]
+        [CheckForComponent(typeof(tk2dSpriteAnimator))]
 		public FsmOwnerDefault gameObject;
 
-		
-		private tk2dAnimatedSprite _sprite;
+
+        private tk2dSpriteAnimator _sprite;
 		
 		private void _getSprite()
 		{
@@ -24,8 +24,8 @@ namespace HutongGames.PlayMaker.Actions
 			{
 				return;
 			}
-			
-			_sprite =  go.GetComponent<tk2dAnimatedSprite>();
+
+            _sprite = go.GetComponent<tk2dSpriteAnimator>();
 		}
 		
 				
@@ -48,7 +48,7 @@ namespace HutongGames.PlayMaker.Actions
 
 			if (_sprite == null)
 			{
-				LogWarning("Missing tk2dAnimatedSprite component");
+                LogWarning("Missing tk2dSpriteAnimator component");
 				return;
 			}
 			if (_sprite.Paused)

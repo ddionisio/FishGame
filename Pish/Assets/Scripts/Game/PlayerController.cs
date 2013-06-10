@@ -62,7 +62,7 @@ public class PlayerController : MonoBehaviour {
     public SpecialBase[] specials; //corresponds to Special enum
     public SpecialBase jumpSpecial;
 
-    public tk2dAnimatedSprite puff;
+    public tk2dSpriteAnimator puff;
 
     public LayerMask terrainMask;
     public LayerMask fishMask;

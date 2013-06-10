@@ -5,7 +5,7 @@ public class FishFireOnSight : MonoBehaviour {
 
     public float damage = 1.0f;
 
-    public tk2dAnimatedSprite anim;
+    public tk2dSpriteAnimator anim;
     public FishControllerBase controller;
 
     public string shootAnimRef = "shoot";
@@ -24,7 +24,7 @@ public class FishFireOnSight : MonoBehaviour {
     }
 
     private State mState = State.Scanning;
-    private int mShootAnimId;
+    private tk2dSpriteAnimationClip mShootAnimId;
     private PlayerController mPlayerController;
     private Projectile mProj;
 
@@ -32,7 +32,7 @@ public class FishFireOnSight : MonoBehaviour {
     }
 
     void Awake() {
-        mShootAnimId = anim.GetClipIdByName(shootAnimRef);
+        mShootAnimId = anim.GetClipByName(shootAnimRef);
     }
 
     void OnTriggerStay(Collider col) {

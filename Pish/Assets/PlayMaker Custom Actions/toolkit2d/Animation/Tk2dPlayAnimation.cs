@@ -4,23 +4,19 @@ using UnityEngine;
 
 namespace HutongGames.PlayMaker.Actions {
     [ActionCategory("2D ToolKit/Sprite")]
-    [Tooltip("Plays a sprite animation. \nNOTE: The Game Object must have a tk2dAnimatedSprite attached.")]
+    [Tooltip("Plays a sprite animation. \nNOTE: The Game Object must have a tk2dSpriteAnimator attached.")]
     public class Tk2dPlayAnimation : FsmStateAction {
         [RequiredField]
-        [Tooltip("The Game Object to work with. NOTE: The Game Object must have a tk2dAnimatedSprite component attached.")]
-        [CheckForComponent(typeof(tk2dAnimatedSprite))]
+        [Tooltip("The Game Object to work with. NOTE: The Game Object must have a tk2dSpriteAnimator component attached.")]
+        [CheckForComponent(typeof(tk2dSpriteAnimator))]
         public FsmOwnerDefault gameObject;
-
-
-        [Tooltip("The anim Lib name. Leave empty to use the one current selected")]
-        public FsmString animLibName;
 
         [RequiredField]
         [Tooltip("The clip name to play")]
         public FsmString clipName;
 
 
-        private tk2dAnimatedSprite _sprite;
+        private tk2dSpriteAnimator _sprite;
 
         private void _getSprite() {
             GameObject go = Fsm.GetOwnerDefaultTarget(gameObject);
@@ -28,13 +24,12 @@ namespace HutongGames.PlayMaker.Actions {
                 return;
             }
 
-            _sprite = go.GetComponent<tk2dAnimatedSprite>();
+            _sprite = go.GetComponent<tk2dSpriteAnimator>();
         }
 
 
         public override void Reset() {
             gameObject = null;
-            animLibName = null;
             clipName = null;
         }
 
@@ -46,14 +41,9 @@ namespace HutongGames.PlayMaker.Actions {
 
         void DoPlayAnimation() {
             if(_sprite == null) {
-                LogWarning("Missing tk2dAnimatedSprite component");
+                LogWarning("Missing tk2dSpriteAnimator component");
                 return;
             }
-
-            if(!animLibName.Value.Equals("")) {
-                string _animLib = animLibName.Value;
-            }
-
 
             if(_sprite.Playing == false) {
 

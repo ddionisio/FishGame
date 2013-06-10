@@ -6,7 +6,7 @@ public class FishFireTimer : MonoBehaviour {
     public float damage = 1.0f;
     public float delay = 1.0f;
 
-    public tk2dAnimatedSprite anim;
+    public tk2dSpriteAnimator anim;
     public FishControllerBase controller;
 
     public string shootAnimRef = "shoot";
@@ -20,7 +20,7 @@ public class FishFireTimer : MonoBehaviour {
     }
 
     private State mState = State.ShootWait;
-    private int mShootAnimId;
+    private tk2dSpriteAnimationClip mShootAnimId;
     private PlayerController mPlayerController;
     private Projectile mProj;
 
@@ -35,7 +35,7 @@ public class FishFireTimer : MonoBehaviour {
     }
 
     void Awake() {
-        mShootAnimId = anim.GetClipIdByName(shootAnimRef);
+        mShootAnimId = anim.GetClipByName(shootAnimRef);
     }
 
     void Start() {

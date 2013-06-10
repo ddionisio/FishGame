@@ -10,7 +10,7 @@ public class FishControllerSimple : FishControllerBase {
     public float waypointStayDelay;
     public float speed;
 
-    public tk2dAnimatedSprite anim;
+    public tk2dSpriteAnimator anim;
     public bool updateFacing = true;
 
     private enum MoveState {
@@ -19,7 +19,7 @@ public class FishControllerSimple : FishControllerBase {
         Done
     }
 
-    private int[] mAnimIds;
+    private tk2dSpriteAnimationClip[] mAnimIds;
 
     private float mDelayToDest;
     private float mCurTime;
@@ -81,7 +81,7 @@ public class FishControllerSimple : FishControllerBase {
         if(rigidbody != null)
             rigidbody.isKinematic = true;
 
-        mAnimIds = M8.tk2dUtil.GenerateSpriteIds(anim, typeof(AnimState));
+        mAnimIds = M8.tk2dUtil.GetSpriteClips(anim, typeof(AnimState));
     }
 
     void FixedUpdate() {
@@ -140,9 +140,9 @@ public class FishControllerSimple : FishControllerBase {
             if(updateFacing) {
                 //determine facing
                 //default facing right
-                Vector3 bodyS = anim.scale;
+                Vector3 bodyS = anim.Sprite.scale;
                 bodyS.x = mDir.x > 0.0f ? -Mathf.Abs(bodyS.x) : Mathf.Abs(bodyS.x);
-                anim.scale = bodyS;
+                anim.Sprite.scale = bodyS;
             }
 
             mMoveState = MoveState.Moving;

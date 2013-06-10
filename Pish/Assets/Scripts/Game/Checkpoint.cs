@@ -3,7 +3,7 @@ using System.Collections;
 
 public class Checkpoint : MonoBehaviour {
 
-    public tk2dAnimatedSprite body;
+    public tk2dSpriteAnimator body;
     public GameObject openActive; //activated if open
     public GameObject triggerActive; //this should auto-disable
     public Transform spawnPoint; //position to spawn

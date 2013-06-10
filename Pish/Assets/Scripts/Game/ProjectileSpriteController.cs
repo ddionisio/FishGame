@@ -7,24 +7,24 @@ public class ProjectileSpriteController : MonoBehaviour {
         destroy
     }
 
-    public tk2dAnimatedSprite anim;
+    public tk2dSpriteAnimator anim;
 
     private Projectile mProjectile;
-    private int[] mAnimIds;
+    private tk2dSpriteAnimationClip[] mAnimIds;
 
     void OnDestroy() {
         if(anim != null)
-            anim.animationCompleteDelegate -= AnimationCompleteDelegate;
+            anim.AnimationCompleted -= AnimationCompleteDelegate;
     }
 
     void Awake() {
         if(anim == null) {
-            anim = GetComponentInChildren<tk2dAnimatedSprite>();
+            anim = GetComponentInChildren<tk2dSpriteAnimator>();
         }
 
-        mAnimIds = M8.tk2dUtil.GenerateSpriteIds(anim, typeof(AnimState));
+        mAnimIds = M8.tk2dUtil.GetSpriteClips(anim, typeof(AnimState));
 
-        anim.animationCompleteDelegate += AnimationCompleteDelegate;
+        anim.AnimationCompleted += AnimationCompleteDelegate;
 
         mProjectile = GetComponent<Projectile>();
         mProjectile.setStateCallback += OnSetState;
@@ -42,8 +42,8 @@ public class ProjectileSpriteController : MonoBehaviour {
         }
     }
 
-    void AnimationCompleteDelegate(tk2dAnimatedSprite sprite, int clipId) {
-        if(clipId == mAnimIds[(int)AnimState.destroy])
+    void AnimationCompleteDelegate(tk2dSpriteAnimator sprite, tk2dSpriteAnimationClip clip) {
+        if(clip == mAnimIds[(int)AnimState.destroy])
             mProjectile.Release();
     }
 }

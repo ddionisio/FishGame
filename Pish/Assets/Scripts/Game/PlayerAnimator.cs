@@ -21,9 +21,7 @@ public class PlayerAnimator : MonoBehaviour {
         swingL2Boost,
         swingMidBoost,
         swingR1Boost,
-        swingR2Boost,
-
-        NumStates
+        swingR2Boost
     }
 
     public enum Mode {
@@ -31,7 +29,7 @@ public class PlayerAnimator : MonoBehaviour {
         Spin
     }
 
-    public tk2dAnimatedSprite sprite;
+    public tk2dSpriteAnimator anim;
     public State[] swingStates;
     public State[] swingBoostStates;
     public ParticleSystem particle;
@@ -39,8 +37,7 @@ public class PlayerAnimator : MonoBehaviour {
     public float spinSpeed;
     public float revertUpDelay = 0.5f;
 
-    private bool mIsFacingLeft;
-    private int[] mStateIds;
+    private tk2dSpriteAnimationClip[] mStateIds;
 
     private Mode mMode = Mode.Normal;
     private State mCurState;
@@ -50,14 +47,10 @@ public class PlayerAnimator : MonoBehaviour {
     private float mCurRevertUpTime;
     
     public bool isFacingLeft {
-        get { return mIsFacingLeft; }
+        get { return anim.Sprite.FlipX; }
         set {
-            if(mIsFacingLeft != value) {
-                mIsFacingLeft = value;
-
-                Vector3 s = sprite.scale;
-                s.x = mIsFacingLeft ? -Mathf.Abs(s.x) : Mathf.Abs(s.x);
-                sprite.scale = s;
+            if(anim.Sprite.FlipX != value) {
+                anim.Sprite.FlipX = value;
             }
         }
     }
@@ -74,7 +67,7 @@ public class PlayerAnimator : MonoBehaviour {
         set {
             if(mCurState != value) {
                 mCurState = value;
-                sprite.Play(mStateIds[(int)mCurState]);
+                anim.Play(mStateIds[(int)mCurState]);
             }
         }
     }
@@ -104,11 +97,7 @@ public class PlayerAnimator : MonoBehaviour {
     }
 
     void Awake() {
-        mStateIds = new int[(int)State.NumStates];
-
-        for(int i = 0; i < mStateIds.Length; i++) {
-            mStateIds[i] = sprite.GetClipIdByName(((State)i).ToString());
-        }
+        mStateIds = M8.tk2dUtil.GetSpriteClips(anim, typeof(State));
     }
 
     // Use this for initialization
@@ -140,7 +129,7 @@ public class PlayerAnimator : MonoBehaviour {
 
             case Mode.Spin:
                 Vector3 rot = transform.eulerAngles;
-                rot.z += mIsFacingLeft ? spinSpeed * Time.deltaTime : -spinSpeed * Time.deltaTime;
+                rot.z += anim.Sprite.FlipX ? spinSpeed * Time.deltaTime : -spinSpeed * Time.deltaTime;
                 transform.eulerAngles = rot;
                 break;
         }

@@ -20,9 +20,9 @@ public class FishController : FishControllerBase {
     //render data
     public Transform bodyHolder;
 
-    public tk2dAnimatedSprite bodyAnim;
-    public tk2dAnimatedSprite finAnim;
-    public tk2dAnimatedSprite tailAnim;
+    public tk2dSpriteAnimator bodyAnim;
+    public tk2dSpriteAnimator finAnim;
+    public tk2dSpriteAnimator tailAnim;
 
     public float rotSpeedScale = 10.0f;
 
@@ -32,7 +32,7 @@ public class FishController : FishControllerBase {
 
     private float mPrevFlockUnitMaxSpeed;
 
-    private int[] mBodyAnimStateIds;
+    private tk2dSpriteAnimationClip[] mBodyAnimStates;
 
     private TransAnimRotWave[] mRotAnims;
     private float[] mRotAnimSpeeds;
@@ -50,11 +50,11 @@ public class FishController : FishControllerBase {
         //make sure mode is random frame
         if(finAnim != null) {
             finAnim.Play();
-            tk2dSpriteCollectionData sprDat = finAnim.Collection;
-            int sprInd = finAnim.spriteId;
+            tk2dSpriteCollectionData sprDat = finAnim.Sprite.Collection;
+            int sprInd = finAnim.Sprite.spriteId;
 
             foreach(tk2dSprite spr in finCopies) {
-                spr.SwitchCollectionAndSprite(sprDat, sprInd);
+                spr.SetSprite(sprDat, sprInd);
             }
         }
 
@@ -121,7 +121,7 @@ public class FishController : FishControllerBase {
                     rotAnims.enabled = false;
                 }
 
-                bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.stun]);
+                bodyAnim.Play(mBodyAnimStates[(int)BodyAnimState.stun]);
                 break;
 
             case MoveMode.Idle:
@@ -157,7 +157,7 @@ public class FishController : FishControllerBase {
                 mFlockUnit.body.useGravity = false;
                 mFlockUnit.maxSpeed = playerChaseMaxSpeed;
 
-                bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.chase]);
+                bodyAnim.Play(mBodyAnimStates[(int)BodyAnimState.chase]);
                 break;
 
             case MoveMode.NumModes:
@@ -188,7 +188,7 @@ public class FishController : FishControllerBase {
             playerSensor.removeCallback += OnPlayerSensorRemoved;
         }
 
-        mBodyAnimStateIds = M8.tk2dUtil.GenerateSpriteIds(bodyAnim, typeof(BodyAnimState));
+        mBodyAnimStates = M8.tk2dUtil.GetSpriteClips(bodyAnim, typeof(BodyAnimState));
 
         mRotAnims = GetComponentsInChildren<TransAnimRotWave>(true);
         mRotAnimSpeeds = new float[mRotAnims.Length];
@@ -245,10 +245,10 @@ public class FishController : FishControllerBase {
 
     void SetBodyAnimNormal() {
         if(mAvoiding) {
-            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.fear]);
+            bodyAnim.Play(mBodyAnimStates[(int)BodyAnimState.fear]);
         }
         else {
-            bodyAnim.Play(mBodyAnimStateIds[(int)BodyAnimState.normal]);
+            bodyAnim.Play(mBodyAnimStates[(int)BodyAnimState.normal]);
         }
     }
 }
