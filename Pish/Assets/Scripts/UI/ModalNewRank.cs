@@ -12,8 +12,6 @@ public class ModalNewRank : UIController {
             GameData.HIScore hiscore = GameData.instance.GetHIScore();
 
             rankLabel.text = hiscore.rank;
-
-            M8.NGUIExtUtil.LayoutRefresh(transform);
         }
         else {
             Main.instance.input.RemoveButtonCall(0, InputAction.MenuAccept, OnInput);
@@ -21,6 +19,7 @@ public class ModalNewRank : UIController {
     }
 
     protected override void OnOpen() {
+        NGUILayoutBase.RefreshNow(transform);
     }
 
     protected override void OnClose() {

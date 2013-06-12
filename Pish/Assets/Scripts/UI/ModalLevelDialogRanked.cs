@@ -15,8 +15,12 @@ public class ModalLevelDialogRanked : ModalLevelDialogBase {
         if(rankSprite != null) {
             rankSprite.spriteName = bestScore.medalSpriteRef;
             rankSprite.MakePixelPerfect();
+        }
+    }
 
-            M8.NGUIExtUtil.LayoutRefresh(rankSprite.transform);
+    protected override void OnOpen() {
+        if(rankSprite != null && rankSprite.transform.parent != null) {
+            NGUILayoutBase.RefreshNow(rankSprite.transform.parent);
         }
     }
 

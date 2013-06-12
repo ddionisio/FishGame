@@ -85,7 +85,7 @@ public class HUD : MonoBehaviour {
                 mRescueItems[i].icon.gameObject.SetActive(false);
             }
 
-            M8.NGUIExtUtil.LayoutRefresh(rescueItemHolder);
+            NGUILayoutBase.RefreshNow(rescueItemHolder);
         }
         else if(mRescueItems != null) {
             foreach(HUDRescueItem itm in mRescueItems) {
