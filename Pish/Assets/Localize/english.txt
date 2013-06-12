@@ -2,5 +2,60 @@
 	{
 		"key":"title",
 		"text":"UNKNOWN"
-	}
+	},
+	
+	{
+		"key":"octo_1_0",
+		"text":"Hi how are you?"
+	},
+	{
+		"key":"octo_1_1",
+		"text":"My favorite color is burgundy!"
+	},
+	{
+		"key":"octo_1_2",
+		"text":"Beneath the ocean deep no one can hear you scream."
+	},
+	
+	{
+		"key":"octo_2_intro",
+		"text":"Hey-o! Wanna hear a poem?"
+	},
+	
+	{
+		"key":"octo_2_yes",
+		"text":"Yeah sure."
+	},
+	{
+		"key":"octo_2_no",
+		"text":"Mm...no."
+	},
+	
+	{
+		"key":"octo_2_accept",
+		"text":"Ok, ok! Here goes! *ahem*"
+	},
+	
+	{
+		"key":"octo_2_0",
+		"text":"Cohered tenticles."
+	},
+	{
+		"key":"octo_2_1",
+		"text":"Cohered tenticles.\nTuck beneath my treasure-trove."
+	},
+	{
+		"key":"octo_2_2",
+		"text":"Cohered tenticles.\nTuck beneath my treasure-trove.\nBohemian grove."
+	},
+	
+	{
+		"key":"octo_2_3",
+		"text":"Oh man, that was terrible."
+	},
+	
+	{
+		"key":"octo_2_reject",
+		"text":"Oh tenticles!"
+	},
 ]

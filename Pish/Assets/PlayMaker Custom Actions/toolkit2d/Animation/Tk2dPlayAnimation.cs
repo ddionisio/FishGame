@@ -15,6 +15,7 @@ namespace HutongGames.PlayMaker.Actions {
         [Tooltip("The clip name to play")]
         public FsmString clipName;
 
+        public bool clipMustExist = false;
 
         private tk2dSpriteAnimator _sprite;
 
@@ -37,6 +38,8 @@ namespace HutongGames.PlayMaker.Actions {
             _getSprite();
 
             DoPlayAnimation();
+
+            Finish();
         }
 
         void DoPlayAnimation() {
@@ -45,10 +48,11 @@ namespace HutongGames.PlayMaker.Actions {
                 return;
             }
 
-            if(_sprite.Playing == false) {
-
-                _sprite.Play(clipName.Value);
-            }
+            tk2dSpriteAnimationClip clip = _sprite.GetClipByName(clipName.Value);
+            if(clip != null)
+                _sprite.Play(clip);
+            else if(clipMustExist)
+                LogWarning("Clip does not exist: "+clipName.Value);
         }
     }
 

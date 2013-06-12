@@ -1,38 +1,11 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\TK2DROOT\tk2d\Code\Sprites\tk2dSprite.cs">
-    <Files>
-      <File FileName="Assets\Scripts\Game\CollectibleEntity.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\HUD.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\PlayerController.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\GameData.cs" Line="1" Column="1" />
-      <File FileName="Assets\NGUI\Scripts\Interaction\UIButtonKeys.cs" Line="1" Column="1" />
-      <File FileName="Assets\NGUI\Scripts\UI\UICamera.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\UI\UIModalInputNGUI.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\ModalOptions.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\Core\Main.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\Core\UserData.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\Core\SceneManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Actions\Game\PlayerInitRescueHUD.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\Player.cs" Line="310" Column="6" />
-      <File FileName="Assets\Scripts\Game\Projectile.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\Game\EntityBase.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Editor\Game\WaypointManagerInspector.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\ModalLevelSelect.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\UILevelItem.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\ModalLevelDialogBase.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\UI\ModalLevelDialogRanked.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\UI\UIModalManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\FishingResultController.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Game\BaseResultController.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8\Scripts\tk2dExt\SpriteFlipRepeat.cs" Line="26" Column="49" />
-      <File FileName="Assets\TK2DROOT\tk2d\Code\Sprites\tk2dBaseSprite.cs" Line="117" Column="1" />
-      <File FileName="Assets\TK2DROOT\tk2d\Code\Sprites\tk2dSprite.cs" Line="165" Column="1" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\M8\Scripts\tk2dExt\SpriteFlipRepeat.cs" line="31" />
+      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\M8\Scripts\UI\UIModalCharacterDialog.cs" line="14" />
+      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\M8\Scripts\UI\UIModalCharacterDialog.cs" line="212" />
+      <Breakpoint file="C:\Lab\FishGame\Pish\Assets\M8PlayMaker\Editor\FsmStringArrayDrawer.cs" line="22" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

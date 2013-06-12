@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour {
     public float jumpSpeed;
     public float maxSpeed;
     public float slideSpeed;
-        
+
     public float hurtSpeed; //speed at which we are going to be hurt
     public float hurtBounceOffSpeed;
     public float hurtEnergy = 1.0f;
@@ -69,7 +69,11 @@ public class PlayerController : MonoBehaviour {
 
     public event OnStateChange stateCallback;
     public event OnHurt hurtCallback;
-    public event OnTrigger triggerEnterCallback;
+
+    /// <summary>
+    /// Called when we trigger an object in layer: PlayerTrigger
+    /// </summary>
+    public event OnTrigger playerTriggerEnterCallback;
 
     private State mState = State.None;
 
@@ -109,10 +113,19 @@ public class PlayerController : MonoBehaviour {
     private bool mShowHookAim = false;
     private bool mFacingLeft = false;
     private bool mIsLastRopePoint = false; //true if we detached from rope and still mid-air
-    private bool mIsLastRopeFacingLeft;
     private float mIsLastRopeSqMag;
 
     private float mCollectorAttachDist;
+
+    private SpecialActionTrigger mSpecialTrigger;
+
+    /// <summary>
+    /// This is used by SpecialActionTrigger when player enters an action area
+    /// </summary>
+    public SpecialActionTrigger specialTrigger {
+        get { return mSpecialTrigger; }
+        set { mSpecialTrigger = value; }
+    }
 
     public Vector2 curInputAxis {
         get { return mCurInputAxis; }
@@ -253,6 +266,7 @@ public class PlayerController : MonoBehaviour {
 
                 if(!value) {
                     mCurInputAxis = Vector2.zero;
+                    mCurVel.x = 0.0f;
                     //ShowHookAim(false);
                 }
             }
@@ -285,10 +299,10 @@ public class PlayerController : MonoBehaviour {
             Vector3 pos = transform.position;
 
             //determine theta
-            //last rope preserves previous angular velocity and theta reflected
+            mTheta = -mAimTheta;
+            mFireDir = M8.MathUtil.Rotate(Vector2.up, mAimTheta);
+
             if(!mIsLastRopePoint) {
-                mTheta = -mAimTheta;
-                mFireDir = M8.MathUtil.Rotate(Vector2.up, mAimTheta);
                 mOmega = 0.0f;
             }
             else {
@@ -311,18 +325,16 @@ public class PlayerController : MonoBehaviour {
         if(state == State.Roping) {
             mIsLastRopePoint = true;
 
-            //
-            float radLim = hookAimMidAirAngleLimit * Mathf.Deg2Rad;
-            mTheta = Mathf.Clamp(mTheta, -radLim, radLim);
-            mFireDir = M8.MathUtil.Rotate(Vector2.up, mTheta);
-            mTheta = -mTheta;
-            //
-
             //convert angular velocity to linear velocity
             mCurVel = GetLinearFromOmega();
 
-            mIsLastRopeFacingLeft = mCurVel.x < 0.0f;
             mIsLastRopeSqMag = mCurVel.sqrMagnitude;
+
+            isFacingLeft = mCurVel.x < 0.0f;
+
+            float radLim = hookAimMidAirAngleLimit * Mathf.Deg2Rad;
+            mTheta = Mathf.Clamp(mTheta, -radLim, radLim);
+            mAimTheta = mTheta;
 
             //Debug.Log("theta: " + (Mathf.Rad2Deg * theta));
             //Debug.Log("vel: " + v);
@@ -333,7 +345,7 @@ public class PlayerController : MonoBehaviour {
 
             animator.mode = PlayerAnimator.Mode.Spin;
             animator.state = PlayerAnimator.State.roll;
-            animator.spinSpeed = Mathf.Abs(8.0f*mOmega*Mathf.Rad2Deg);
+            animator.spinSpeed = Mathf.Abs(8.0f * mOmega * Mathf.Rad2Deg);
         }
     }
 
@@ -342,7 +354,7 @@ public class PlayerController : MonoBehaviour {
 
         stateCallback = null;
         hurtCallback = null;
-        triggerEnterCallback = null;
+        playerTriggerEnterCallback = null;
     }
 
     void Awake() {
@@ -617,12 +629,6 @@ public class PlayerController : MonoBehaviour {
         //determine facing
         if(mCurVel.x != 0.0f) {
             isFacingLeft = mCurVel.x < 0.0f;
-
-            if(mIsLastRopeFacingLeft != mFacingLeft && mIsLastRopePoint) {
-                mTheta *= -1;
-                mFireDir.x *= -1;
-                mIsLastRopeFacingLeft = mFacingLeft;
-            }
         }
 
         //set collector attach offset
@@ -674,11 +680,19 @@ public class PlayerController : MonoBehaviour {
     }
 
     void OnSpecial(InputManager.Info data) {
-        if(mCurSpecial != null
-            && (mState == State.Roping || mState == State.Normal)
-            && !(isSpecialActive || isJumpSpecialActive)
-            && data.state == InputManager.State.Pressed) {
-            mCurSpecial.Act(this);
+        if(data.state == InputManager.State.Pressed) {
+            if(mSpecialTrigger != null) {
+                if(mSpecialTrigger.criteriaValid) {
+                    mSpecialTrigger.Action();
+                }
+            }
+            else if(mCurSpecial != null) {
+                if((mState == State.Roping || mState == State.Normal)
+                && !(isSpecialActive || isJumpSpecialActive)) {
+                    mCurSpecial.Act(this);
+                }
+            }
+
         }
     }
 
@@ -724,8 +738,38 @@ public class PlayerController : MonoBehaviour {
     }
 
     void OnTriggerEnter(Collider coll) {
-        if(triggerEnterCallback != null)
-            triggerEnterCallback(coll);
+        int layer = coll.gameObject.layer;
+
+        if(layer == Layers.playerTrigger) {
+            if(playerTriggerEnterCallback != null)
+                playerTriggerEnterCallback(coll);
+        }
+        else if(layer == Layers.specialTrigger) {
+            if(mSpecialTrigger == null) {
+                mSpecialTrigger = coll.GetComponent<SpecialActionTrigger>();
+                if(mSpecialTrigger != null)
+                    mSpecialTrigger.playerController = this;
+            }
+            else if(mSpecialTrigger.gameObject != coll.gameObject) {
+                SpecialActionTrigger trigger = coll.GetComponent<SpecialActionTrigger>();
+                if(trigger != null) {
+                    mSpecialTrigger.playerController = null;
+                    mSpecialTrigger = trigger;
+                    mSpecialTrigger.playerController = this;
+                }
+            }
+        }
+    }
+
+    void OnTriggerExit(Collider coll) {
+        int layer = coll.gameObject.layer;
+
+        if(layer == Layers.specialTrigger) {
+            if(mSpecialTrigger != null && mSpecialTrigger.gameObject == coll.gameObject) {
+                mSpecialTrigger.playerController = null;
+                mSpecialTrigger = null;
+            }
+        }
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit) {
@@ -760,7 +804,7 @@ public class PlayerController : MonoBehaviour {
             case State.RopeShoot:
                 if(hit.gameObject.layer == Layers.spike) {
                     LevelController levelCtrl = LevelController.instance;
-                                        
+
                     state = State.Stunned;
 
                     //bounce off
@@ -779,7 +823,7 @@ public class PlayerController : MonoBehaviour {
                         mCurVel = rV.normalized * hurtBounceOffSpeed;
 
                         State prevState = state;
-                        
+
                         state = State.Stunned;
 
                         if(prevState != State.Stunned)
@@ -909,7 +953,7 @@ public class PlayerController : MonoBehaviour {
     /// </summary>
     private void UpdateHookAim() {
         if(mShowHookAim) {
-            Vector2 up = mIsLastRopePoint ? new Vector2(mFireDir.x, mFireDir.y) : M8.MathUtil.Rotate(Vector2.up, mAimTheta);
+            Vector2 up = M8.MathUtil.Rotate(Vector2.up, mAimTheta);
 
             float r = mCharCtrl.radius + rope.maxLength;
 
@@ -939,7 +983,7 @@ public class PlayerController : MonoBehaviour {
             else {
                 hookAimReticle.SetActive(false);
             }
-                                    
+
             Vector3 hookLinePos = hookAimLine.transform.localPosition;
             hookLinePos.x = up.x * mCharCtrl.radius;
             hookLinePos.y = up.y * mCharCtrl.radius;

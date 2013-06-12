@@ -323,7 +323,7 @@ public class Player : EntityBase {
         mController.collectSensor.collector.collectReachedCallback += OnCollect;
         mController.collectSensor.collector.collectQueueCallback += OnCollectQueue;
 
-        mController.triggerEnterCallback += OnControllerTriggerEnter;
+        mController.playerTriggerEnterCallback += OnControllerTriggerEnter;
 
         mStats = GetComponentInChildren<PlayerStats>();
         mStats.changeCallback += OnStatsChange;
