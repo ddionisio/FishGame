@@ -1,10 +1,10 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\M8Animator\Editor\AMTimeline.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\M8Animator\Editor\AMEditorResource.cs">
     <Files>
       <File FileName="Assets\M8Animator\Scripts\Classes\AMTranslationTrack.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8Animator\Scripts\AnimatorData.cs" Line="359" Column="1" />
-      <File FileName="Assets\M8Animator\Scripts\Classes\AMTake.cs" Line="1160" Column="17" />
+      <File FileName="Assets\M8Animator\Scripts\AnimatorData.cs" Line="1" Column="1" />
+      <File FileName="Assets\M8Animator\Scripts\Classes\AMTake.cs" Line="1" Column="1" />
       <File FileName="Assets\M8Animator\Scripts\Classes\AMTranslationAction.cs" Line="1" Column="1" />
       <File FileName="Assets\M8Animator\Scripts\Classes\AMAction.cs" Line="1" Column="1" />
       <File FileName="Assets\M8Animator\Scripts\Classes\AMUtil.cs" Line="1" Column="1" />
@@ -15,10 +15,11 @@
       <File FileName="Assets\M8Animator\Scripts\Classes\AMEventParameter.cs" Line="1" Column="1" />
       <File FileName="Assets\M8Animator\Scripts\Classes\AMEventAction.cs" Line="1" Column="1" />
       <File FileName="Assets\M8Animator\Editor\AMEasePicker.cs" Line="1" Column="1" />
-      <File FileName="Assets\M8Animator\Editor\AMTimeline.cs" Line="74" Column="1" />
-      <File FileName="Assets\M8Animator\Scripts\Classes\AMTrack.cs" Line="30" Column="1" />
-      <File FileName="Assets\M8Animator\Editor\AnimatorDataInspector.cs" Line="21" Column="105" />
-      <File FileName="Assets\M8Animator\Editor\AMSettings.cs" Line="66" Column="31" />
+      <File FileName="Assets\M8Animator\Editor\AMTimeline.cs" Line="78" Column="42" />
+      <File FileName="Assets\M8Animator\Scripts\Classes\AMTrack.cs" Line="1" Column="1" />
+      <File FileName="Assets\M8Animator\Editor\AnimatorDataInspector.cs" Line="1" Column="1" />
+      <File FileName="Assets\M8Animator\Editor\AMSettings.cs" Line="1" Column="1" />
+      <File FileName="Assets\M8Animator\Editor\AMEditorResource.cs" Line="45" Column="4" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
